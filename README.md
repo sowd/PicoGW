@@ -17,7 +17,8 @@ $ node main.js
 ```
 
 **Accessing**
-Access **8080 port** of the running machine from Web browser.
+
+Access **8080 port** of the running machine from your favorite Web browser.
 
 **Changing the server port**
 ```bash
