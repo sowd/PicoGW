@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="js/jstree-themes/default/style.min.css" />
+</head>
+<body>
+<h1>PicoGW</h1>
+A minimalist's home gateway that supports ECHONET Lite. The license is MIT.<br />
+The primary distribution site is <a href='https://github.com/KAIT-HEMS/PicoGW'>here</a>.
+<hr />
+<div id="resource_tree"></div>
+<hr />
+<h2>Licenses</h2>
+<h4>MIT</h4>
+<li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
+<li><a href='https://www.jstree.com/' target='_blank'>jsTree</a></li>
+<li><a href='https://www.npmjs.com/package/arped' target='_blank'>arped</a></li>
+<li><a href='https://www.npmjs.com/package/echonet-lite' target='_blank'>echonet-lite</a></li>
+<li><a href='https://www.npmjs.com/package/express' target='_blank'>express</a></li>
+<li><a href='https://www.npmjs.com/package/ipmask' target='_blank'>ipmask</a></li>
+<li><a href='https://www.npmjs.com/package/mime' target='_blank'>mime</a></li>
+<li><a href='https://www.npmjs.com/package/ping' target='_blank'>ping</a></li>
+<h4>Apache 2.0</h4>
+<li><a href='https://www.npmjs.com/package/websocket' target='_blank'>websocket</a></li>
+</body>
+<script src='js/jquery-3.1.1.min.js'></script>
+<script src="js/jstree.min.js"></script>
+<script>
+const API_PREFIX = '/v1' ;
+var log = console.log ;
+var res_tree = $('#resource_tree') ;
+var node_properties = {'.':{isleaf:false,longdoc:undefined}} ;
+
+/// Tree activities
+function t_open(path){
+	return new Promise( (ac,rj)=>{
+		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
+		$.ajax({
+			type: 'GET'
+			,url: API_PREFIX+path_real+'?option=true'
+			,dataType: 'json'
+			,success: function(json){
+				//log(json) ;
+				for( var dk in json ){
+					var next_path_id = path+dk+'.' ;
+					var txt = dk;//`${path_real}${dk}` ;
+
+					node_properties[next_path_id] = {isleaf:true,longdoc:undefined} ;
+
+					try {
+						var opt = json[dk].option ;
+						node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
+						var shortdoc = opt.doc.short ;
+						var longdoc = opt.doc.long ;
+						if( shortdoc != undefined ) txt += ' (' + shortdoc +')' ;
+						if( longdoc != undefined)
+							node_properties[next_path_id].longdoc = longdoc ;
+					} catch(e){}
+
+					res_tree.jstree(
+						'create_node', '#'+path
+						,{ id : next_path_id , text : txt
+						, type : (node_properties[next_path_id].isleaf?'file':'folder')});
+				}
+				res_tree.jstree('open_node', '#'+path);
+			}
+			,error: ()=>{
+				alert('API call failed:'+path) ;
+			}
+		});
+	}) ;
+}
+
+$(function () {
+	// When selected
+	res_tree.on('changed.jstree', function (e, data) {
+		if( data.action == 'select_node' ) {
+			if( res_tree.jstree( 'is_open' , data.node ) ){
+				// Already open
+				if( data.node.id != '.')
+					res_tree.jstree( 'close_node', data.node);
+			} else {// Not open yet
+				var selnodename = data.selected[0] ;
+				if( node_properties[selnodename].isleaf ){
+					if( node_properties[selnodename].longdoc != undefined )
+						alert(node_properties[selnodename].longdoc) ;
+					else
+						alert('No documentation available on this leaf.') ;
+				} else {
+					t_open(selnodename) ;
+				}
+			}
+		}
+	});
+	// When closed
+	res_tree.on('after_close.jstree',(e,data)=>{
+		data.node.children.forEach(cn=>{ delete node_properties[cn] ; })
+		res_tree.jstree( 'delete_node', data.node.children) ;
+	}) ;
+	// Open root elements for first time
+	res_tree.on('loaded.jstree',(e,data)=>{ t_open('.'); }) ;
+	// Initialize
+	res_tree.jstree({
+		core: {
+			'data': [{id:'.',text:'/'}]
+			,'check_callback': true
+        }
+        ,plugins : [ 'contextmenu' , 'types']
+        ,contextmenu : {
+        	items:node=>{
+        		return {
+					Document:  {label:'Document', action:obj=>{
+						if( node_properties[node.id].longdoc != undefined )
+							alert(node_properties[node.id].longdoc) ;
+						else
+							alert('No document available.') ;
+					}}
+					,OpenAPI: {label:'Open API',	action:obj=>{
+						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+						window.open(API_PREFIX+path_real,'_target') ;
+					}}
+        		} ;
+			}
+			,select_node: false
+        }
+		,types: {
+			folder: {icon: 'jstree-folder'}
+			,file: {icon: 'jstree-file'}
+		}
+    }) ;
+
+
+
+    /*var connection = new WebSocket('ws://192.168.126.103:8080/v1' ,['picogw']);
+	connection.onopen = function () {
+  		connection.send('Ping'); // Send the message 'Ping' to the server
+	};
+	*/
+	/*
+	$.ajax({
+		type: "PUT",
+		url: "http://192.168.126.104:8080/v1/echonet/AirConditioner_1/OperatingState?value=0x30",
+		success: function(msg){
+			alert( JSON.stringify(msg) );
+		}
+	});
+	*/
+});
+
+
+</script>
+</html>

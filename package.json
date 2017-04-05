@@ -1,0 +1,29 @@
+{
+  "name": "picogw",
+  "version": "0.0.1",
+  "description": "Minimalist's Home Gateway",
+  "main": "main.js",
+  "dependencies": {
+    "arped": "^0.2.0",
+    "echonet-lite": "^0.0.17",
+    "express": "^4.15.2",
+    "ipmask": "^1.0.0",
+    "mime": "^1.3.4",
+    "ping": "^0.2.2",
+    "websocket": "^1.0.24"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KAIT-HEMS/PicoGW.git"
+  },
+  "author": "KAIT-HEMS",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/KAIT-HEMS/PicoGW/issues"
+  },
+  "homepage": "https://github.com/KAIT-HEMS/PicoGW#readme"
+}
