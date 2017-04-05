@@ -129,7 +129,7 @@ function onProcCall_Get( method , serviceid , propname , argument ){
 		case 'log' :
 			if( logger.schedule[propname] == undefined )
 				return {error:'No such schedule name:'+propname} ;
-			return logger.getlog( logger.schedule[propname].real_path ) ;
+			return logger.getlog( logger.schedule[propname].path ) ;
 		case 'net' :
 			var m = ipv4.getmacs()[propname] ;
 			if( m == undefined )

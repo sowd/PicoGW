@@ -72,7 +72,7 @@ exports.start = function(ai){
 	},ACCESS_START_WAIT ) ;
 } ;
 
-exports.getlog = function(paths){
+exports.getlog = function(path){
 	return new Promise((ac,rj)=>{
 		fs.readdir( adminInterface.getpath()+'log' ,(err,files) => {
 			if( err ){ rj({error:'cannot read log folder'}); return ;}
@@ -88,7 +88,7 @@ exports.getlog = function(paths){
 					try {
 						var logarray = JSON.parse(data) ;
 						var logarray_selected
-							= logarray.filter( entry => paths.indexOf(entry.path)>=0 ) ;
+							= logarray.filter( entry => path==entry.path ) ;
 						ac( logarray_selected ) ;
 					} catch(e){
 						rj( {error:'Log file is not in JSON format',content:data} ) ;
