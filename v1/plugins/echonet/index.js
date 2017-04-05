@@ -358,6 +358,16 @@ function registerExistingDevice( devid ){
 
 
 function onProcCall( method , _devid , propname , argument ){
+	if( _devid == undefined || propname == undefined ){
+		switch(method){
+		case 'GET' :
+			return onProcCall_Get( method , _devid , propname , argument ) ;
+		case 'PUT' :
+		case 'SET' :
+			return onProcCall_Put( method , _devid , propname , argument ) ;
+		}
+		return {error:`The specified method ${method} is not implemented in echonet lite plugin.`} ;
+	}
 	var devids = expandDeviceIdFromPossiblyRegExpDeviceId(_devid) ;
 	switch(method){
 	case 'GET' :
