@@ -185,38 +185,6 @@ class ClientContext {
 	}
 	// Get client home dir
 	getpath (){return `${VERSION}/clients/${this.prefix}/`;}
-	get_expanded_paths_from_regexp_path(regexp_path){
-		var _this = this ;
-		return new Promise((accept,reject)=>{
-				var pcand = [''] ;
-				var ps = regexp_path.split('/') ;
-
-				function calcpcand(){
-					if(ps.length==0 || pcand.length == 0){
-						accept(pcand) ;
-						return ;
-					}
-					var pterm = ps.shift() ;
-					var _pcand = [] ;
-					Promise.all(
-						pcand.map(pcand_e=> new Promise((ac,rj)=>{
-							_this.callproc('GET',pcand_e).then(dir_contents=>{
-								for( var f in dir_contents){
-									if( f.match(new RegExp(`^${pterm}$`))){
-										_pcand.push(pcand_e==''?f:pcand_e+'/'+f) ;
-									}
-								}
-								ac() ;
-							}).catch(ac) ;
-						}))
-					).then(()=>{
-						pcand = _pcand ;
-						calcpcand() ;
-					})
-				}
-				calcpcand() ;
-		}) ;
-	}
 } ;
 
 

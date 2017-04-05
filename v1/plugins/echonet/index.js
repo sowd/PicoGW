@@ -49,6 +49,20 @@ value: {
 }
 */
 
+function expandDeviceIdFromPossiblyRegExpDeviceId(device_id_with_regexp){
+	var re = [] ;
+	var regexp = new RegExp(device_id_with_regexp) ;
+	for( var mac in macs ){
+		for( var devid in macs[mac].devices ){
+			if( devid.match(regexp) ){
+				re.push(devid) ;
+			}
+		}
+	}
+
+	return re ;
+}
+
 function getMacFromDeviceId(device_id){
 	for( var mac in macs ){
 		for( var devid in macs[mac].devices ){
@@ -343,13 +357,33 @@ function registerExistingDevice( devid ){
 ///
 
 
-function onProcCall( method , devid , propname , argument ){
+function onProcCall( method , _devid , propname , argument ){
+	var devids = expandDeviceIdFromPossiblyRegExpDeviceId(_devid) ;
 	switch(method){
 	case 'GET' :
-		return onProcCall_Get( method , devid , propname , argument ) ;
+		return new Promise( (acpt,rjct)=>{
+			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
+					onProcCall_Get( method , devid , propname , argument )
+						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
+			})) ).then(re=>{
+				var res = {} ;
+				re.forEach(_re=>{res[_re[0]]=_re[1];}) ;
+				acpt(res) ;
+			})
+		}) ;
 	case 'PUT' :
 	case 'SET' :
-		return onProcCall_Put( method , devid , propname , argument ) ;
+		return new Promise( (acpt,rjct)=>{
+			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
+					onProcCall_Put( method , devid , propname , argument )
+						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
+			})) ).then(re=>{
+				var res = {} ;
+				re.forEach(_re=>{res[_re[0]]=_re[1];}) ;
+				acpt(res) ;
+			})
+		}) ;
+		//return onProcCall_Put( method , devid , propname , argument ) ;
 	}
 	return {error:`The specified method ${method} is not implemented in echonet lite plugin.`} ;
 }

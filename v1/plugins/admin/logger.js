@@ -20,7 +20,7 @@ exports.start = function(ai){
 	log = adminInterface.log ;
 	localStorage = adminInterface.localStorage ;
 
-	var EVERYMIN = [] ; for( var ai=0;ai<60;++ai ) EVERYMIN.push(':'+ai) ;
+	//var EVERYMIN = [] ; for( var ai=0;ai<60;++ai ) EVERYMIN.push(':'+ai) ;
 	exports.schedule = localStorage.getItem('schedule',{
 		echo_allpower : {
 			path : 'echonet/.+/OperatingState'
@@ -52,29 +52,21 @@ exports.start = function(ai){
 				var spath = exports.schedule[sid].path ;
 				var schedule_func = exports.schedule[sid].schedule_func ;
 
-				adminInterface.get_expanded_paths_from_regexp_path(spath).then(paths=>{
-					//log('Expanded path:'+JSON.stringify(paths)) ;
-					exports.schedule[sid].real_path = paths ;
-					//localStorage.setItem('schedule',schedule) ;
+				function access_device(){
+					setTimeout( ()=>{
+						log('Accessing '+spath);
+						adminInterface.callproc('GET',spath).then(rep=>{
+							add_log(spath,rep) ;
+						}).catch(rep=>{
+							add_log(spath,rep) ;
+						}) ;
+					} , parseInt(Math.random()*SINGLE_ACCESS_RANDOM_RANGE) ) ;
 
-					function access_device(){
-						paths.forEach( path=>{
-							setTimeout( ()=>{
-								log('Accessing '+path);
-								adminInterface.callproc('GET',path).then(rep=>{
-									add_log(path,rep) ;
-								}).catch(rep=>{
-									add_log(path,rep) ;
-								}) ;
-							} , parseInt(Math.random()*SINGLE_ACCESS_RANDOM_RANGE) ) ;
-						} ) ;
-
-						setTimeout( access_device
-							, schedule_func() + SINGLE_ACCESS_DELAY ) ;
-					}
 					setTimeout( access_device
 						, schedule_func() + SINGLE_ACCESS_DELAY ) ;
-				}) ;
+				}
+				setTimeout( access_device
+					, schedule_func() + SINGLE_ACCESS_DELAY ) ;
 			})() ;
 		}
 	},ACCESS_START_WAIT ) ;
