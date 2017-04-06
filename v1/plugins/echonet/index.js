@@ -368,7 +368,8 @@ function onProcCall( method , _devid , propname , argument ){
 		}
 		return {error:`The specified method ${method} is not implemented in echonet lite plugin.`} ;
 	}
-	var devids = expandDeviceIdFromPossiblyRegExpDeviceId(_devid) ;
+	var devids = expandDeviceIdFromPossiblyRegExpDeviceId(
+		decodeURIComponent(_devid)) ;
 	switch(method){
 	case 'GET' :
 		return new Promise( (acpt,rjct)=>{
