@@ -144,7 +144,7 @@ function add_log(path,value){
 	var logfile = [] ;
 	try {
 		logfile = JSON.parse(fs.readFileSync(adminInterface.getpath()+'log/'+fname)) ;
-	} catch(e){log('File read error:'+adminInterface.getpath()+'log/'+fname) ;}
+	} catch(e){ /*log('File read error:'+adminInterface.getpath()+'log/'+fname);*/ }
 	logfile.push({ timestamp : Date.now() , date : d.toJSON() , path : path , value : value }) ;
 	try {
 		fs.writeFile(adminInterface.getpath()+'log/'+fname, JSON.stringify(logfile,null,"\t") ,()=>{}) ;
