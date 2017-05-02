@@ -5,7 +5,7 @@ The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
 ## HowTo
 
-**Check your node.js version**
+**Checking your node.js version**
 
 ```bash
 $ node -v
@@ -15,14 +15,10 @@ We develop this software on node.js v7.6. If you are using an older version, we 
 
 **Setup**
 
-Clone this repository
+Clone this repository and install necessary node.js libraries.
 
 ```bash
 $ git clone --depth 1 https://github.com/KAIT-HEMS/PicoGW.git
-```
-
-Install node libraries
-```bash
 $ cd PicoGW
 $ npm i
 ```
@@ -33,12 +29,27 @@ $ npm i
 $ node main.js
 ```
 
-**Accessing**
+**Web access**
 
 Access **8080 port** of the running machine from your favorite Web browser.
 Follow the instruction shown in the opened page.
 
 ## Additional settings
+
+**Background execution**
+
+The first line is necessary only for first time. The second line should be executed in PicoGW directory.
+```bash
+$ sudo npm install forever -g
+$ forever start main.js
+```
+
+**Stop background execution**
+
+```bash
+$ forever stop main.js
+```
+
 
 **Changing the server port**
 
