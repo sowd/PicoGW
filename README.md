@@ -22,6 +22,8 @@ $ node main.js
 
 Access **8080 port** of the running machine from your favorite Web browser.
 
+## Additional settings
+
 **Changing the server port**
 
 ```bash
@@ -35,6 +37,7 @@ $ echo '{"makercode":12345}' > v1/plugins/echonet/localstorage.json
 ```
 
 ## Licenses
+
 #### MIT
 
 [jQuery](https://jquery.com/)  
