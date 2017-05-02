@@ -1,7 +1,13 @@
-const DEVICE_MULTICAST_INTERVAL = 60*1000 ;
 const GET_TIMEOUT = 60 * 1000 ;
 const MY_EOJ = [0x05,0xff,0x01] ;
 const LOCALE = 'EN' ;
+
+// first DEVICE_MULTICAST_INTITIAL_NUMBER accesses are done in every
+// DEVICE_MULTICAST_INITIAL_INTERVAL ms. Then the frequency becomes
+// DEVICE_MULTICAST_INTERVAL ms.
+var DEVICE_MULTICAST_INTITIAL_NUMBER = 4 ;
+const DEVICE_MULTICAST_INITIAL_INTERVAL = 15*1000 ;
+const DEVICE_MULTICAST_INTERVAL = 60*1000 ;
 
 var VERSION ;
 
@@ -264,8 +270,15 @@ exports.init = function(pi,_VERSION){
 	var elsocket = EL.initialize(
 		[MY_EOJ.map(e=>('0'+e.toString(16)).slice(-2)).join('')] , ( rinfo, els ) => {}) ;
 
-	EL.search();
-	setInterval(()=>{EL.search();},DEVICE_MULTICAST_INTERVAL) ;
+	var countdown = 4 ;	// Frequent search for first countdown times
+
+	function searcher(){
+		EL.search();
+		if( --DEVICE_MULTICAST_INTITIAL_NUMBER > 0 )
+			 setTimeout(searcher,DEVICE_MULTICAST_INITIAL_INTERVAL) ;
+		else setInterval(()=>{EL.search();},DEVICE_MULTICAST_INTERVAL) ;
+	}
+	searcher() ;
 
 	// Plugin must return (possibly in promise) procedure call callback function.
 	// The signature is ( method , devid , propertyname , argument )
