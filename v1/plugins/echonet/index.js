@@ -270,8 +270,6 @@ exports.init = function(pi,_VERSION){
 	var elsocket = EL.initialize(
 		[MY_EOJ.map(e=>('0'+e.toString(16)).slice(-2)).join('')] , ( rinfo, els ) => {}) ;
 
-	var countdown = 4 ;	// Frequent search for first countdown times
-
 	function searcher(){
 		EL.search();
 		if( --DEVICE_MULTICAST_INTITIAL_NUMBER > 0 )

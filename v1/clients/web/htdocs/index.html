@@ -127,7 +127,7 @@ $(function () {
 					}}
 					,OpenAPI: {label:'Open API',	action:obj=>{
 						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
-						window.open(API_PREFIX+path_real,'_target') ;
+						window.open(API_PREFIX+path_real,'_blank') ;
 					}}
         		} ;
 			}
@@ -145,11 +145,10 @@ $(function () {
 	connection.onopen = function () {
   		connection.send('Ping'); // Send the message 'Ping' to the server
 	};
-	*/
-	/*
+
 	$.ajax({
 		type: "PUT",
-		url: "http://192.168.126.104:8080/v1/echonet/AirConditioner_1/OperatingState?value=0x30",
+		url: "http://192.168.126.104:8080/v1/echonet/AirConditioner_1/OperatingState?30",
 		success: function(msg){
 			alert( JSON.stringify(msg) );
 		}

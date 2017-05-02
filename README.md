@@ -5,7 +5,7 @@ The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
 ## HowTo
 
-**Checking your node.js version**
+**Check your node.js version**
 
 ```bash
 $ node -v
