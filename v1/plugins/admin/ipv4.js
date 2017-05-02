@@ -17,11 +17,12 @@ const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_ALL_IN
 var arped = require('arped');
 var ping = require('ping');
 
-var mynetinfo = require('ipmask')() ;	// updated on all ping timing
+var ipmask = require('ipmask') ;
+var mynetinfo = ipmask() ;	// updated on all ping timing
 console.log('Network info:'+JSON.stringify(mynetinfo)) ;
 
 // ID == mac address
-var onIPMacFoundCallback = {}
+var onIPMacFoundCallback = {} ;
 exports.getNetIDFromIPv4Address = function(ip){
 	return new Promise((ac,rj)=>{
 		for( var mac in macs){
@@ -76,6 +77,8 @@ exports.getmacs = ()=>macs ;
 //////////////////////////////////////////////
 //  Check arp table and update macs
 var macs = {} ;
+macs[mynetinfo.mac] = {active:true, localhost:true, log: [ {ip:mynetinfo.address,timestamp:Date.now()} ]} ;
+
 var arptxt = '' ;
 function chkArpTable(){
  	var newtxt = arped.table().trim() ;
@@ -141,13 +144,17 @@ function ping_all(){
 
 	if( COMPLETE_IP_SCAN ){
 		// add unknown ip address to ping list
-		var netmask = require('ipmask')() ;
+		mynetinfo = ipmask();
+		if( macs[mynetinfo.mac].log[0].ip == mynetinfo.address )
+			macs[mynetinfo.mac].log[0].timestamp = Date.now() ;
+		else
+			macs[mynetinfo.mac].log.unshift( {ip:mynetinfo.address,timestamp:Date.now()} ) ;
 
 		var mask = 0 , subnet = 0 ;
-		netmask.netmask.split('.').forEach( b => {
+		mynetinfo.netmask.split('.').forEach( b => {
 			mask = mask*256 + parseInt(b) ;
 		} ) ;
-		netmask.address.split('.').forEach( b => {
+		mynetinfo.address.split('.').forEach( b => {
 			subnet = subnet*256 + parseInt(b) ;
 		} ) ;
 		subnet = subnet & mask ;
@@ -160,7 +167,7 @@ function ping_all(){
 			++subnet ;
 			++mask ;
 
-			if( ping_ips_copy[ip] == undefined && ip != netmask.address )
+			if( ping_ips_copy[ip] == undefined && ip != mynetinfo.address )
 				ping_ips_copy[ip] = null ;
 		}
 	}

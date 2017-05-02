@@ -10,6 +10,15 @@ The primary distribution site is <a href='https://github.com/KAIT-HEMS/PicoGW'>h
 <hr />
 <div id="resource_tree"></div>
 <hr />
+To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's get access to the property in new tab. If you want set a new value to a property, you access the same URL by PUT method with the desired parameter value. For example:
+<blockquote>
+http://<span class='myip'>[IP address]:8080</span>/v1/echonet/AirConditioner_1/OperatingState/?30
+</blockquote>
+will set 0x30 to OperatingState property (meaning Power ON). If your browser does not support PUT access, you can also mimic it by adding 'PUT' at the end of GET URL. For example:
+<blockquote>
+http://<span class='myip'>[IP address]:8080</span>/v1/echonet/AirConditioner_1/OperatingState/PUT?30
+</blockquote>
+<hr />
 <h2>Licenses</h2>
 <h4>MIT</h4>
 <li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
@@ -72,6 +81,7 @@ function t_open(path){
 }
 
 $(function () {
+	$('span.myip').text(location.host) ;
 	// When selected
 	res_tree.on('changed.jstree', function (e, data) {
 		if( data.action == 'select_node' ) {

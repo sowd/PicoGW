@@ -147,6 +147,6 @@ function add_log(path,value){
 	} catch(e){log('File read error:'+adminInterface.getpath()+'log/'+fname) ;}
 	logfile.push({ timestamp : Date.now() , date : d.toJSON() , path : path , value : value }) ;
 	try {
-		fs.writeFile(adminInterface.getpath()+'log/'+fname, JSON.stringify(logfile,null,"\t")) ;
+		fs.writeFile(adminInterface.getpath()+'log/'+fname, JSON.stringify(logfile,null,"\t") ,()=>{}) ;
 	} catch(e){log('File write error:'+adminInterface.getpath()+'log/'+fname) ;}
 }

@@ -112,7 +112,9 @@ function onProcCall_Get( method , serviceid , propname , argument ){
 					var ipaddr = (macs[mac].log.length==0?null:macs[mac].log[0].ip) ;
 					ret[mac] = {
 						active:macs[mac].active
-						,ip:ipaddr} ;
+						,ip:ipaddr
+						,localhost:macs[mac].localhost
+					} ;
 					if( args.option === 'true' ){
 						ret[mac].option = {
 							leaf:true

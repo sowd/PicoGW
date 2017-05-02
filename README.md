@@ -23,6 +23,7 @@ $ node main.js
 Access **8080 port** of the running machine from your favorite Web browser.
 
 **Changing the server port**
+
 ```bash
 $ echo '{"serverport":12345}' > v1/clients/web/localstorage.json
 ```

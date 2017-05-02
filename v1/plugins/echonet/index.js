@@ -1,7 +1,7 @@
 const DEVICE_MULTICAST_INTERVAL = 60*1000 ;
 const GET_TIMEOUT = 60 * 1000 ;
 const MY_EOJ = [0x05,0xff,0x01] ;
-const LOCALE = 'JP' ;
+const LOCALE = 'EN' ;
 
 var VERSION ;
 
@@ -157,34 +157,45 @@ exports.init = function(pi,_VERSION){
 
 				var mm = macs[mac] ;
 
-				// 新規obj
-				if( seoj != '0ef0' ){
-					if( mm.eoj_id_map[els.SEOJ] != undefined ) {
+				// 機器が発見された
+				function onDevFound(eoj){
+					if( mm.eoj_id_map[eoj] != undefined ) {
 						// Already defined device
-						var dev = mm.devices[ mm.eoj_id_map[els.SEOJ] ] ;
+						var dev = mm.devices[ mm.eoj_id_map[eoj] ] ;
 						if( dev.active !== true ){	// First time since last boot
-							registerExistingDevice(mm.eoj_id_map[els.SEOJ]) ;
-							// Request for property map
-							EL.getPropertyMaps( ip, EL.toHexArray(els.SEOJ) );
-
+							registerExistingDevice(mm.eoj_id_map[eoj]) ;
+							EL.getPropertyMaps( ip, EL.toHexArray(eoj) );
 							//log('Predefined device '+mm.eoj_id_map[els.SEOJ]+' replied') ;
 						}
 					} else {
-						var devid = ELDB[seoj].objectType ;
+						var devid = ELDB[eoj.slice(0,4)].objectType ;
 						if( devid == undefined ) return ;
 						var c = localStorage.getItem(devid+'_Count',0) + 1 ;
 						localStorage.setItem(devid+'_Count',c) ;
 
 						devid = devid+'_'+c ;
-						mm.eoj_id_map[els.SEOJ] = devid ;
-						mm.devices[devid] = { eoj : els.SEOJ } ;
+						mm.eoj_id_map[eoj] = devid ;
+						mm.devices[devid] = { eoj : eoj } ;
+						log('New device '+devid+' found') ;
 
 						registerExistingDevice(devid) ;
-						// Request for property map
-						EL.getPropertyMaps( ip, EL.toHexArray(els.SEOJ) );
-
-						log('New device '+devid+' found') ;
+						EL.getPropertyMaps( ip, EL.toHexArray(eoj) );
 					}
+				}
+
+				if( seoj != '0ef0' ){
+					onDevFound(els.SEOJ) ;
+					savemac() ;
+				} else if(els.DEOJ == '0ef001' && els.ESV == '73'
+					&& els.DETAILs != undefined && els.DETAILs.d5 != undefined ){
+					// Device added to network announcement
+					var inst_num = parseInt( els.DETAILs.d5.slice(0,2) ) ;
+					var insts = els.DETAILs.d5.slice(2) ;
+					while( insts.length>5 ){
+						onDevFound(insts.slice(0,6)) ;
+						insts = insts.slice(6) ;
+					}
+					savemac() ;
 				}
 
 
@@ -386,8 +397,8 @@ function onProcCall( method , _devid , propname , argument ){
 	case 'SET' :
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
-					onProcCall_Put( method , devid , propname , argument )
-						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
+				onProcCall_Put( method , devid , propname , argument )
+					.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
 				re.forEach(_re=>{res[_re[0]]=_re[1];}) ;
