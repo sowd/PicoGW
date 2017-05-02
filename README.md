@@ -7,8 +7,15 @@ The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
 **Setup**
 
-Clone this repository and type
+Clone this repository
+
 ```bash
+$ git clone --depth 1 https://github.com/KAIT-HEMS/PicoGW.git
+```
+
+Install node libraries
+```bash
+$ cd PicoGW
 $ npm i
 ```
 
@@ -21,6 +28,7 @@ $ node main.js
 **Accessing**
 
 Access **8080 port** of the running machine from your favorite Web browser.
+Follow the instruction shown in the opened page.
 
 ## Additional settings
 
