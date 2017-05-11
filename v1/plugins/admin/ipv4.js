@@ -7,12 +7,12 @@
 // Todo: what happens if myself is disconnected?
 
 const CHECK_ARP_TABLE_INTERVAL = 2000 ;
-const PING_ALL_INTERVAL = 15*1000 , PING_TIMEOUT_IN_SEC = 10 ;
-const COMPLETE_IP_SCAN = true ;
+const PING_INTERVAL = 10*1000 /*Alive check*/, PING_TIMEOUT_IN_SEC = 10 ;
+const COMPLETE_IP_SCAN = false ;
 
 
 
-const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_ALL_INTERVAL + PING_TIMEOUT_IN_SEC ;
+const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_TIMEOUT_IN_SEC*1000 ;
 
 var arped = require('arped');
 var ping = require('ping');
@@ -40,6 +40,7 @@ exports.getNetIDFromIPv4Address = function(ip){
 			onIPMacFoundCallback[ip] = [] ;
 		// Wait until mac address is found.
 		onIPMacFoundCallback[ip].push( ac ) ;
+		ping.sys.probe(ip, function(isActive){}) ;	// take mac to arp table
 
 		// Timeout setting
 		setTimeout( ()=>{
@@ -174,8 +175,7 @@ function ping_all(){
 
 	var ipnum=0 ;
 	for( var _ip in ping_ips_copy ){++ipnum;}
-	var delay = 0 , delay_interval = Math.floor(PING_ALL_INTERVAL / ipnum) ;
-
+	var delay = 0 ;
 
 	for( var _ip in ping_ips_copy ){
 		(function(){
@@ -201,10 +201,11 @@ function ping_all(){
 				}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
 			},delay) ;
 		})();
-		delay += delay_interval ;
+		delay += PING_INTERVAL ;
 	}
+
+	setTimeout(ping_all,delay) ;
 }
 
 setInterval(chkArpTable,CHECK_ARP_TABLE_INTERVAL) ;
-//ping_all() ;
-//setInterval(ping_all,PING_ALL_INTERVAL) ;
+ping_all() ;
