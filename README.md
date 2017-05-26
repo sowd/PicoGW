@@ -153,6 +153,30 @@ will obtain OperatingState of a light and an airconditioner at once. Note that t
 
 PropertyID cannot accept regular expression (because it can easily be many!)
 
+## Named pipe API
+
+Named pipe can be used as a transport of PicoGW API. It is convenient to access PicoGW's functionality within a single machine. To use this API, please first make two named piped files (by the **mkfifo** command), which must have the unique prefix with two kinds of postfices (_r and _w). For example :
+
+```bash
+$ mkfifo np_r np_w
+```
+will create a pair of named pipes. *np* in the example above can be an arbitrary vaild string.
+Then, PicoGW must be launched with **--pipe** option supplied with unique prefix:
+```bash
+$ node main.js --pipe np
+```
+In this mode, PicoGW will halt until the client that accesses the named pipe is connected. The client must open *_r* file with read only mode, while *_w* with write mode.
+
+The API call should be written to *_w* file as a string followed by a newline "\n". The string is a stringified JSON object such as:
+
+```
+{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","arg":"30"}
+```
+For GET case, **arg** key is not necessary.
+Make sure that this request itself must not contain a newline "\n".
+
+The API result can be obtained from reading the *_r* file.
+
 ## Licenses
 
 #### MIT
