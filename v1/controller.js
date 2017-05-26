@@ -111,6 +111,9 @@ class ClientContext {
 	}
 	// method:	GET/PUT that go directly to the plugin
 	callproc (method,procedure,argument){
+		if( procedure.indexOf(`/${VERSION}/`) != 0 )
+			return Promise.reject('Invalidly formatted procedure: ' + procedure)
+		procedure = procedure.slice(`/${VERSION}/`.length) ;
 		if(argument==undefined) argument='' ;
 		var _args = argument.split('&') , args = {} ;
 		_args.forEach(eq=>{
@@ -206,13 +209,12 @@ exports.init = function(_VERSION){
 	        'value': true,
 	        'required': false
 	    },
-	    /*{
-	        'short': 'n',
-	        'long': 'npipe',
-	        'description': 'named pipe without postfix (_r or _w)',
+	    {
+	        'long': 'pipe',
+	        'description': 'path of named pipes without postfix (_r or _w). The server is blocked until the pipe client is connected.',
 	        'value': true,
 	        'required': false
-	    },*/
+	    },
 	],true);
 
 	return Promise.all([

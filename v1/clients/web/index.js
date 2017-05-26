@@ -26,6 +26,9 @@ exports.init = function(ci,cmd_opts){
 	}
 	clientInterface.subscribe('echonet/AirConditioner_1/OperatingState',fun) ;
 	*/
+
+	if( cmd_opts.get('pipe') )
+		setupNamedPipeServer( cmd_opts.get('pipe') ) ;
 } ;
 
 function setupWebServer(){
@@ -39,7 +42,7 @@ function setupWebServer(){
 	http.all(`/${VERSION}/*`, function(req, res, next){
 		// for( var e in req ){if( typeof req[e] == 'string') log(e+':'+req[e]);}
 		// var caller_ip = req.ip ;
-		var path = req.path.substring(`/${VERSION}/`.length).trim() ;
+		var path = req.path ; //.substring(`/${VERSION}/`.length).trim() ;
 		var arg = '' ;
 		if( req.originalUrl.indexOf('?') >= 0 ) arg = req.originalUrl.slice(req.originalUrl.indexOf('?')+1) ;
 		clientInterface.callproc(req.method,path,arg).then(re=>{
@@ -107,4 +110,55 @@ function setupWebServer(){
 	        log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
 	    });
 	});
+}
+
+function setupNamedPipeServer(pipe_prefix){
+	// Pipe postfix
+	// _r (read port from client's viewpoint)
+	// _w (write port from client's viewpoint)
+	const PIPE_NAME = {read:pipe_prefix+'_w',write:pipe_prefix+'_r'} ;
+
+	function onerror(msg){
+	    console.error('Error in communicating with named pipe '+pipe_prefix+'_r/_w:');
+	    console.error(msg);
+	    console.error('Stoped using named pipe.');
+	}
+	try {
+		console.log('Connecting to named pipe '+pipe_prefix+'_r/_w (block until target process is connected.)') ;
+		// Read stream setup
+		var rs = fs.createReadStream(PIPE_NAME.read, 'utf-8');
+
+		var readbuf = '' ;
+		rs	.on('data', data=>{
+				readbuf += data ;
+				var ri = readbuf.lastIndexOf("\n") ;
+				if( ri<0 ) return ;
+				var focus = readbuf.slice(0,ri) ;
+				readbuf = readbuf.slice(ri+1) ;
+
+				focus.split("\n").forEach(req_str=>{
+					var req = JSON.parse(req_str) ;
+					clientInterface.callproc(req.method,req.path,req.arg).then(re=>{
+						ws.write(JSON.stringify(re)+"\n") ;
+					}).catch(e=>{
+						ws.write(JSON.stringify(e)+"\n") ;
+					}) ;
+				}) ;
+		    })
+	    	.on('open',()=>{		console.log('Read pipe opened.');})
+	    	.on('error', err =>{	onerror(JSON.stringify(err)); })
+	    	.on('close',()=>{		onerror('Read pipe closed.');}) ;
+
+	    // Write stream setup
+	    var ws = fs.createWriteStream(PIPE_NAME.write, 'utf-8');
+	    ws	.on('drain', ()=>{})
+	    	.on('open',()=>{		console.log('Write pipe opened.');})
+	        .on('error', err =>{ onerror(JSON.stringify(err)); })
+	        .on('close', ()=>{ onerror('Write pipe closed.'); })
+	        //.on('pipe',  src =>{});
+	} catch (err) {
+		//console.error(err) ;
+	    console.error('Error in opening named pipe '+pipe_prefix+'_r/_w.');
+	    console.error('Stoped using named pipe.');
+	}
 }
