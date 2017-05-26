@@ -1,10 +1,5 @@
-// if 'serverport' entry is added to localstorage.json,
-// The number is loaded to this variable.
-var SERVER_PORT = 8080 ;
-
+var SERVER_PORT , VERSION ;
 const WS_SUBPROTOCOL = 'picogw' ;
-
-var VERSION ;
 
 var WebSocketServer = require('websocket').server;
 var express = require('express') ;
@@ -14,12 +9,12 @@ var mime = require('mime') ;
 var clientInterface ;
 var log = console.log ;
 
-exports.init = function(ci,_VERSION){	
+exports.init = function(ci,cmd_opts){	
 	clientInterface = ci ;
 	log = clientInterface.log ;
-	VERSION = _VERSION ;
+	VERSION = cmd_opts.VERSION ;
 
-	SERVER_PORT = clientInterface.localStorage.getItem('serverport',SERVER_PORT) ;
+	SERVER_PORT = cmd_opts.get('port') || 8080 ;
 
 	setupWebServer() ;
 

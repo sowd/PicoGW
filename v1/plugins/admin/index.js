@@ -8,10 +8,10 @@ var log = console.log ;
 var ipv4 = require('./ipv4.js');
 var logger = require('./logger.js');
 
-exports.init = function(ai,_VERSION){
+exports.init = function(ai,cmd_opts){
 	adminInterface = ai ;
 	log = adminInterface.log ;
-	VERSION = _VERSION ;
+	VERSION = cmd_opts.VERSION ;
 	
 	ipv4.setNetCallbackFunctions(
 		function(newid,newip){

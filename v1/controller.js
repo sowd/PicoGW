@@ -195,6 +195,26 @@ var Plugins = {} , Clients = {} ;
 exports.init = function(_VERSION){
 	VERSION = _VERSION ;
 
+	var cmd_opts = require('opts');
+	cmd_opts.VERSION = VERSION ;
+
+	cmd_opts.parse([
+	    {
+	        'short': 'p',
+	        'long': 'port',
+	        'description': 'Web API port number',
+	        'value': true,
+	        'required': false
+	    },
+	    /*{
+	        'short': 'n',
+	        'long': 'npipe',
+	        'description': 'named pipe without postfix (_r or _w)',
+	        'value': true,
+	        'required': false
+	    },*/
+	],true);
+
 	return Promise.all([
 		new Promise( (ac,rj)=>{
 			// Scan plugins
@@ -202,7 +222,7 @@ exports.init = function(_VERSION){
 			try {
 				// Setup admin plugin first
 				fs.statSync( PLUGINS_FOLDER ) ;
-				fs.readdir(PLUGINS_FOLDER, (err, files) => {
+				fs.readdir( PLUGINS_FOLDER, (err, files) => {
 					if (err){ rj('No plugin folder found.'); return; }
 
 					var plugin_names = ['admin'] ;
@@ -237,7 +257,7 @@ exports.init = function(_VERSION){
 						try {
 							var pobj = require('./plugins/' + plugin_name + '/index.js') ;
 							// Plugin init must return procedure call callback function.
-							Promise.all([pobj.init(exportmethods,VERSION)]).then( p => {
+							Promise.all([pobj.init(exportmethods,cmd_opts)]).then( p => {
 								pc.procCallback = p[0] ;
 
 								Plugins[plugin_name] = pc ;
@@ -285,7 +305,7 @@ exports.init = function(_VERSION){
 						}) ;
 						exportmethods.localStorage = ci.localStorage ;
 						try {
-							Promise.all([require('./clients/' + client_name + '/index.js').init(exportmethods,VERSION)]).then(()=>{
+							Promise.all([require('./clients/' + client_name + '/index.js').init(exportmethods,cmd_opts)]).then(()=>{
 								Clients[client_name] = ci ;
 								log(client_name+' client initiaized') ;
 								if( client_names.length == 0 ){ac('All client initialization process is ended.'); return;}

@@ -54,13 +54,13 @@ $ forever stop main.js
 **Changing the server port**
 
 ```bash
-$ echo '{"serverport":12345}' > v1/clients/web/localstorage.json
+$ node main.js -p 12345
 ```
 
 **Changing the maker code**
 
 ```bash
-$ echo '{"makercode":12345}' > v1/plugins/echonet/localstorage.json
+$ echo '{"makercode":1234}' > v1/plugins/echonet/localstorage.json
 ```
 
 ## Web API
