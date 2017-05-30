@@ -74,7 +74,7 @@ The Web API hosted by PicoGW is a developing version of [Housing API by Daiwa Ho
 
 The concept of this API is as follows:
 
-1. **Simple and easy**. The API basecally follows the concept of REST. At the same time, we tried not to be too strict to the concept. The API can violate the conceptual correctness to achive easiness. We also put effort to keep source code small, because large source code hampers wide commitments.
+1. **Simple and easy**. The API basecally follows the concept of REST. At the same time, we tried not to be too strict to the concept. The API can violate the conceptual correctness to achieve easiness. We also put effort to keep source code small, because large source code hampers wide commitments.
 2. **Extensible**. The API should support the forthcoming IoT devices without drastically changing the basic calling styles. We adopt plugin architecture to achieve this.
 3. **Maximize the merit for residents**. Most home gateway system are developed by home appliances companies. PicoGW should be independent from the pressure from such industry and conservatively implement really necessary, minimal functionalities.
 
@@ -114,7 +114,7 @@ The admin plugin is responsible to logging to network management.
 
 The log object in the admin plugin.
 
-Currently, logging schedule is written directly into the source code (**v1/plugins/admin/logger.js**), it should be changed through control panel GUI.Properties under this directory is read only.
+Currently, logging schedule is written directly into the source code (**v1/plugins/admin/logger.js**), it should be changed through control panel GUI. The properties under this directory is read only.
 
 #### GET /v1/admin/net
 
@@ -145,7 +145,7 @@ This will set a new value (EDT) to the property. Thew new value is specified in 
 
 This request header must contain "Content-type: application/json".  
 There are serveral ways to specify NEWVAL:
-1. an array of bytes such as **[48]**.
+1. An array of bytes in decimal digit such as **[48]**.
 2. If you want to set it as a hex array, each hex number should be specifies as a string such as **["0x30"]**.
 3. If the length of the array is exactly one, you can directly write the element itself such as **48** or **"0x30"**.
 4. Exceptionally, some properties supports more meaningful string such as **"on"** or **"off"**.
@@ -198,7 +198,7 @@ The API result can be obtained from reading the *_r* file.
 
 ## PubSub
 
-Connection-based API access (named pipe and websocket(in future)) supports PubSub access model.
+Connection-based API transports (named pipe and in future, websocket) support PubSub model.
 
 #### Subscribe
 Send the following JSON to the transport. (wildcard is not supported now)
