@@ -2,9 +2,6 @@
 
 A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports ECHONET Lite. The license is MIT.
 The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
-## News
-
-+ 170530 API changed!
 
 ## Installation & Running
 
@@ -203,13 +200,13 @@ Connection-based API transports (named pipe and in future, websocket) support Pu
 #### Subscribe
 Send the following JSON to the transport. (wildcard is not supported now)
 
-> {"method":"SUB","path":"/v1/echonet/AirConditioner_1/OperatingState/"}
+> {"method":"SUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
 
 Then a value change is asynchronously notified by a PUB JSON object.
 
 #### Unsubscribe
 
-> {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState/"}
+> {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
 
 ## Licenses
 
