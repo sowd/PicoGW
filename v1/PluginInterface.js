@@ -1,13 +1,10 @@
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-//  Plugin and Client interfaces
-// Plugin context that is passed to each plugin constructor
+// Plugin interface that is passed to each plugin constructor
 "use strict";
 
 var fs = require('fs');
 
 var globals = {} ;	// VERSION, admin, PubSub
-exports.PluginContext = class {
+exports.PluginInterface = class {
 	constructor ( _globals,prefix ) {
 		globals = _globals ;
 	    this.prefix = prefix ;

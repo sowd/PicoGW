@@ -1,10 +1,10 @@
-// Client context that is passed to each client constructor
+// Client interface that is passed to each client constructor
 "use strict";
 var fs = require('fs');
 
 var globals = {} ;	// VERSION, PubSub, Plugins, CALL_TIMEOUT
 
-exports.ClientContext = class {
+exports.ClientInterface = class {
 	constructor ( _globals,prefix ) {
 	    this.prefix = prefix;
 	    globals = _globals ;

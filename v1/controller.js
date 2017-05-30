@@ -4,9 +4,9 @@ var VERSION ;
 const CALL_TIMEOUT = 60*1000 ;
 
 var fs = require('fs');
-var PubSub = require('./pubsub.js').PubSub;
-var PluginContext = require('./pluginContext.js').PluginContext ;
-var ClientContext = require('./clientContext.js').ClientContext ;
+var PubSub = require('./PubSub.js').PubSub;
+var PluginInterface = require('./PluginInterface.js').PluginInterface ;
+var ClientInterface = require('./ClientInterface.js').ClientInterface ;
 
 var log = console.log ;
 var admin ;
@@ -54,7 +54,7 @@ exports.init = function(_VERSION){
 			   	 	log('Plugins registeration started.') ;
 			   	 	function registerplugin(){
 			   	 		var plugin_name = plugin_names.shift() ;
-						var pc = new PluginContext(
+						var pc = new PluginInterface(
 							{VERSION:VERSION,admin:admin,PubSub:PubSub}
 							,plugin_name) ;
 						var exportmethods = {} ;
@@ -67,7 +67,7 @@ exports.init = function(_VERSION){
 						exportmethods.localStorage = pc.localStorage ;
 
 						if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
-							var ci = new ClientContext(
+							var ci = new ClientInterface(
 								{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT}
 								,plugin_name) ;
 							['callproc','subscribe','unsubscribe','unsubscribeall','log'
@@ -118,8 +118,8 @@ exports.init = function(_VERSION){
 			   	 	log('Clients registration started.') ;
 			   	 	function registerclient(){
 			   	 		var client_name = client_names.shift() ;
-						//var ci = new ClientContext({VERSION:VERSION,PubSub:PubSub,Plugins:Plugins},client_name) ;
-						var ci = new ClientContext(
+						//var ci = new ClientInterface({VERSION:VERSION,PubSub:PubSub,Plugins:Plugins},client_name) ;
+						var ci = new ClientInterface(
 							{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT}
 							,client_name) ;
 						var exportmethods = {} ;
