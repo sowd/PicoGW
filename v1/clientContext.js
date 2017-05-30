@@ -1,4 +1,5 @@
 // Client context that is passed to each client constructor
+"use strict";
 var fs = require('fs');
 
 var globals = {} ;	// VERSION, PubSub, Plugins, CALL_TIMEOUT
@@ -40,17 +41,12 @@ exports.ClientContext = class {
 	    } ;
 	}
 	// method:	GET/PUT that go directly to the plugin
-	callproc (method,procedure,argument){
+	callproc (method,procedure,args){
 		if( procedure.indexOf(`/${globals.VERSION}/`) != 0 )
-			return Promise.reject('Invalidly formatted procedure: ' + procedure) ;
+			return Promise.reject('Version mismatch: ' + procedure) ;
 		procedure = procedure.slice(`/${globals.VERSION}/`.length) ;
-		if(argument==undefined) argument='' ;
-		var _args = argument.split('&') , args = {} ;
-		_args.forEach(eq=>{
-			var terms = eq.split('=');
-			if( terms[0].trim().length==0) return ;
-			args[terms[0]]=(terms.length==1?null:terms[1]);
-		}) ;
+		if(args==undefined) args={} ;
+
 		return new Promise( (ac,rj)=>{
 			try {
 				if( procedure.length == 0 ){ // access for '/v1/' => plugin list
@@ -74,7 +70,7 @@ exports.ClientContext = class {
 				var proccallback = globals.Plugins[pprefix].procCallback ;
 				if( typeof proccallback == 'function'){
 					var bReplied = false ;
-					Promise.all([proccallback(method.toUpperCase(),pdevid,ppropname,argument)])
+					Promise.all([proccallback(method.toUpperCase(),pdevid,ppropname,args)])
 						.then(re=>{
 						 if( !bReplied ){ bReplied = true ; ac(re[0]); }
 						})

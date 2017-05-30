@@ -80,6 +80,14 @@ function getMacFromDeviceId(device_id){
 	return undefined ;
 }
 
+function hexStringToNumberArray(hexstr){
+	if( hexstr.indexOf('0x')==0 ) hexstr = hexstr.slice(2) ;
+	var ret = [] ;
+	for( var i=0;i<hexstr.length;i+=2)
+		ret.push( parseInt('0x'+hexstr.slice(i,i+2))) ;
+	return ret ;
+}
+
 var ELDB = {} ;
 
 exports.init = function(pi,cmd_opts){
@@ -224,6 +232,7 @@ exports.init = function(pi,cmd_opts){
 					}
 
 					if(epcType == undefined)	epcType = epc ;
+					epcList[epc] = hexStringToNumberArray(epcList[epc]) ;
 					var edt = (edtConvFunc==undefined	? epcList[epc] : edtConvFunc(epcList[epc]) ) ;
 					tgt[epcType] = edt ;
 
@@ -378,14 +387,14 @@ function registerExistingDevice( devid ){
 ///
 
 
-function onProcCall( method , _devid , propname , argument ){
+function onProcCall( method , _devid , propname , args ){
 	if( _devid == undefined || propname == undefined ){
 		switch(method){
 		case 'GET' :
-			return onProcCall_Get( method , _devid , propname , argument ) ;
+			return onProcCall_Get( method , _devid , propname , args ) ;
 		case 'PUT' :
 		case 'SET' :
-			return onProcCall_Put( method , _devid , propname , argument ) ;
+			return onProcCall_Put( method , _devid , propname , args ) ;
 		}
 		return {error:`The specified method ${method} is not implemented in echonet lite plugin.`} ;
 	}
@@ -395,7 +404,7 @@ function onProcCall( method , _devid , propname , argument ){
 	case 'GET' :
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
-					onProcCall_Get( method , devid , propname , argument )
+					onProcCall_Get( method , devid , propname , args )
 						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
@@ -407,7 +416,7 @@ function onProcCall( method , _devid , propname , argument ){
 	case 'SET' :
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
-				onProcCall_Put( method , devid , propname , argument )
+				onProcCall_Put( method , devid , propname , args )
 					.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
@@ -415,18 +424,12 @@ function onProcCall( method , _devid , propname , argument ){
 				acpt(res) ;
 			})
 		}) ;
-		//return onProcCall_Put( method , devid , propname , argument ) ;
+		//return onProcCall_Put( method , devid , propname , args ) ;
 	}
 	return {error:`The specified method ${method} is not implemented in echonet lite plugin.`} ;
 }
 
-function onProcCall_Get( method , devid , propname , argument ){
-	var _args = argument.split('&') , args = {} ;
-	_args.forEach(eq=>{
-		var terms = eq.split('=');
-		if( terms[0].trim().length==0) return ;
-		args[terms[0]]=(terms.length==1?null:terms[1]);
-	}) ;
+function onProcCall_Get( method , devid , propname , args ){
 	if( devid == undefined ){	// access 'echonet/' => device list
 		var devices = {} ;
 		for( var mac in macs ){
@@ -535,9 +538,9 @@ function onProcCall_Get( method , devid , propname , argument ){
 	return getPropVal(devid,epc_hex) ;
 }
 
-function onProcCall_Put( method , devid , propname , argument ){
-	if( devid == undefined || propname == undefined || (argument.length==0) )
-		return {error:`Device id, property name, and the argument "param" (or "p") must be provided for ${method} method.`} ;
+function onProcCall_Put( method , devid , propname , args ){
+	if( devid == undefined || propname == undefined || args==undefined || args.value==undefined)
+		return {error:`Device id, property name, and the argument "value" must be provided for ${method} method.`} ;
 
 	var mac = getMacFromDeviceId(devid) ;
 	if( mac == undefined )	return {error:'No such device:'+devid} ;
@@ -567,27 +570,26 @@ function onProcCall_Put( method , devid , propname , argument ){
 			edtConvFunc = epco.edtConvFuncs[1] ;
 	}
 
-/*
-	if( argument.param !== undefined)
-		argument.p = argument.param ;
-	if( argument.p==undefined && argument.param == undefined ){
-		for( var param in argument){
-			if( argument[param] === '')	// ?..   (.. = directly epc hex)
-				argument.p = param ;
+	if( typeof args.value == 'string' ){
+		if( !isNaN(parseInt(args.value)) ) args.value = [parseInt(args.value)] ;
+		else {
+			try {
+				args.value = JSON.parse(args.value) ;
+			} catch(e){
+				// Non-number string
+				if( edtConvFunc==undefined )
+					return {error:'value is not parse-able to JSON:'+args.value} ;
+				else
+					args.value = edtConvFunc(args.value) ;
+			}
 		}
-	}*/
-	var edthexstr =
-		(edtConvFunc==undefined	? argument : edtConvFunc(argument)) ;
+	}
 
 	var edt = [] ;
-	while( edthexstr.length>0 ){
-		var e = edthexstr.slice(0,2) ;
-		edthexstr = edthexstr.slice(2) ;
 
-		e = parseInt('0x'+e) ;
-		if( e != NaN ){		edt.push(e) ; continue ; }
-		// Error. edt remain fixed.
-	}
+	if( args.value instanceof Array )	edt = args.value.map( elem=> (isFinite(elem) ? elem : parseInt(elem) )  ) ;
+	else if( isFinite(args.value) )		edt = [args.value] ;
+	else return {error:'Unknown format value :'+args.value} ;
 
 	return setPropVal(devid,epc_hex,edt) ;
 }

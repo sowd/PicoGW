@@ -60,21 +60,21 @@ exports.setNetIDCallbacks_Forward = function(plugin_name , callbacks_obj) {
 	netIDCallbacks[plugin_name] = callbacks_obj ;
 } ;
 
-function onProcCall( method , devid , propname , argument ){
+function onProcCall( method , devid , propname , args ){
 	switch(method){
 	case 'GET' :
-		return onProcCall_Get( method , devid , propname , argument ) ;
+		return onProcCall_Get( method , devid , propname , args ) ;
 	}
 	return {error:`The specified method ${method} is not implemented in admin plugin.`} ;
 }
 
-function onProcCall_Get( method , serviceid , propname , argument ){
-	var _args = argument.split('&') , args = {} ;
+function onProcCall_Get( method , serviceid , propname , args ){
+	/*var _args = argument.split('&') , args = {} ;
 	_args.forEach(eq=>{
 		var terms = eq.split('=');
 		if( terms[0].trim().length==0) return ;
 		args[terms[0]]=(terms.length==1?null:terms[1]);
-	}) ;
+	}) ;*/
 	if( serviceid == undefined ){	// access 'admin/' => service list
 		var re = { log:{} , net:{} } ;
 		for( var sc in logger.schedule )

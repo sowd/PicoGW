@@ -5,6 +5,7 @@
   "main": "main.js",
   "dependencies": {
     "arped": "^0.2.0",
+    "body-parser": "^1.17.2",
     "echonet-lite": "^0.0.17",
     "express": "^4.15.2",
     "ipmask": "^1.0.0",

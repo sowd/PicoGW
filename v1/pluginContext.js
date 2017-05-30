@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////
 //  Plugin and Client interfaces
-
 // Plugin context that is passed to each plugin constructor
+"use strict";
 
 var fs = require('fs');
 

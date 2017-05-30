@@ -3,6 +3,7 @@ const WS_SUBPROTOCOL = 'picogw' ;
 
 var WebSocketServer = require('websocket').server;
 var express = require('express') ;
+const bodyParser = require('body-parser');
 var fs = require('fs');
 var mime = require('mime') ;
 
@@ -33,6 +34,11 @@ exports.init = function(ci,cmd_opts){
 
 function setupWebServer(){
 	var http = express() ;
+	http.use(bodyParser.urlencoded({ extended: true }));
+	http.use(bodyParser.json());
+	http.use (function (e, req, res, next){
+	    res.jsonp(e) ;	//Catch json error
+	});
 
 	var server = http.listen(SERVER_PORT,function() {
 		log('Web server is waiting on port '+SERVER_PORT+'.') ;
@@ -43,9 +49,16 @@ function setupWebServer(){
 		// for( var e in req ){if( typeof req[e] == 'string') log(e+':'+req[e]);}
 		// var caller_ip = req.ip ;
 		var path = req.path ; //.substring(`/${VERSION}/`.length).trim() ;
-		var arg = '' ;
-		if( req.originalUrl.indexOf('?') >= 0 ) arg = req.originalUrl.slice(req.originalUrl.indexOf('?')+1) ;
-		clientInterface.callproc(req.method,path,arg).then(re=>{
+		var args = req.body ;
+		// Overwrite args in body with GET parameters
+		if( req.originalUrl.indexOf('?') >= 0 ){
+			req.originalUrl.slice(req.originalUrl.indexOf('?')+1).split('&').forEach(eq=>{
+				var terms = eq.split('=') ;
+				if( terms.length == 1 ) args.value = terms[0] ;
+				else					args[terms[0]] = decodeURIComponent(terms[1]) ;
+			}) ;
+		}
+		clientInterface.callproc(req.method,path,args).then(re=>{
 			res.jsonp(re) ;
 		}).catch(e=>{
 		    res.jsonp(e);
