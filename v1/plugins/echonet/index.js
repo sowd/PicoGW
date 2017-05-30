@@ -96,7 +96,6 @@ exports.init = function(pi,cmd_opts){
 		for( var devid in macs[mac].devices )
 			macs[mac].devices[devid].active = false ;
 	}
-
 	pluginInterface.setNetIDCallbacks({
 		 onNewIDFoundCallback : function(newid,newip){
 		 	//log('onNewIDFoundCallback:'+JSON.stringify(arguments)) ;

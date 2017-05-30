@@ -23,17 +23,17 @@ exports.start = function(ai){
 	//var EVERYMIN = [] ; for( var ai=0;ai<60;++ai ) EVERYMIN.push(':'+ai) ;
 	exports.schedule = localStorage.getItem('schedule',{
 		echo_allpower : {
-			path : 'echonet/.+/OperatingState'
+			path : '/v1/echonet/.+/OperatingState'
 			, schedule : [':0',':10',':20',':30',':40',':50']
 			, description : 'Power of all ECHONET Lite devices'
 		}
 		,echo_instpower : {
-			path : 'echonet/PanelboardMetering_.+/InstantaneousPowerMeasurementValue'
+			path : '/v1/echonet/PanelboardMetering_.+/InstantaneousPowerMeasurementValue'
 			, schedule : [':0',':30']
 			, description : 'Instantaneous power of distribution board'
 		}
 		, mac_trace : {
-			path : 'admin/net'
+			path : '/v1/admin/net'
 			, schedule : [':0',':10',':20',':30',':40',':50']
 			, description : 'Network status'
 		}
