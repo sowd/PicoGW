@@ -80,14 +80,6 @@ function getMacFromDeviceId(device_id){
 	return undefined ;
 }
 
-function hexStringToNumberArray(hexstr){
-	if( hexstr.indexOf('0x')==0 ) hexstr = hexstr.slice(2) ;
-	var ret = [] ;
-	for( var i=0;i<hexstr.length;i+=2)
-		ret.push( parseInt('0x'+hexstr.slice(i,i+2))) ;
-	return ret ;
-}
-
 var ELDB = {} ;
 
 exports.init = function(pi,cmd_opts){
@@ -232,8 +224,10 @@ exports.init = function(pi,cmd_opts){
 					}
 
 					if(epcType == undefined)	epcType = epc ;
-					epcList[epc] = hexStringToNumberArray(epcList[epc]) ;
-					var edt = (edtConvFunc==undefined	? epcList[epc] : edtConvFunc(epcList[epc]) ) ;
+					if( epcList[epc]=='')	continue ;
+
+					var edt = epcList[epc] = EL.toHexArray(epcList[epc]) ;
+					//var edt = (edtConvFunc==undefined	? epcList[epc] : edtConvFunc(epcList[epc]) ) ;
 					tgt[epcType] = edt ;
 
 					// reply of get request? (works only for first OPC)
@@ -242,20 +236,24 @@ exports.init = function(pi,cmd_opts){
 					// placed here.
 					if( procCallWaitList[els.TID] != undefined ){
 						if( els.ESV == '72' /* && els.OPC == '01'*/ ){
-							procCallWaitList[els.TID]({epc:epc,value:edt}) ;
+							procCallWaitList[els.TID](
+								{epc:parseInt('0x'+epc),edt:edt
+								, value:(edtConvFunc==undefined?undefined:edtConvFunc(edt))}) ;
 							delete procCallWaitList[els.TID] ;
 						}	// ESV == '52' is processed outside of epc loop.
 					}
 
 					if( els.TID == '0000' && seoj!='0ef0' /*nodeprofile does not publish*/)
-						pluginInterface.publish(mm.eoj_id_map[els.SEOJ] , epcType , {epc:epc,value:edt} ) ;
+						pluginInterface.publish(mm.eoj_id_map[els.SEOJ] , epcType
+							, {epc:parseInt('0x'+epc),edt:edt
+							, value:(edtConvFunc==undefined?undefined:edtConvFunc(edt))} ) ;
 				}
 
 
 				// Reply of SetC request
 				if( procCallWaitList[els.TID] != undefined ){
 					if( els.ESV == '71' ){	// accepted
-						procCallWaitList[els.TID]({epc:els.DETAIL.slice(0,2),success:'SetC request accepted.'}) ;
+						procCallWaitList[els.TID]({epc:parseInt('0x'+els.DETAIL.slice(0,2)),success:'SetC request accepted.'}) ;
 						delete procCallWaitList[els.TID] ;
 					} else if( els.ESV == '51' || els.ESV == '52' ){	// cannot reply
 						procCallWaitList[els.TID]({error:'Cannot complete the request.',els:els}) ;
@@ -467,22 +465,31 @@ function onProcCall_Get( method , devid , propname , args ){
 		}
 
 		var re = {} ;
+		var cache_edt,cache_value,cacheStr ;
 		if( eoj != '0ef0'){
 			for( var epc in ELDB['0000'].epcs ){
 				var epco = ELDB['0000'].epcs[epc] ;
 				var epcType = epco.epcType ;
-				var cache_value = dev[epcType] ;
+				cache_edt = dev[epcType] ;
+				cache_value = undefined ;
+
+				if( cache_edt != undefined && epco.edtConvFuncs != undefined && typeof epco.edtConvFuncs[0] == 'function' )
+					cache_value = epco.edtConvFuncs[0](cache_edt) ;
 				re[epcType] = {
 					super : true
-					, cache : (cache_value==undefined?null:cache_value)
+					, epc : parseInt('0x'+epc)
+					, cache_edt : cache_edt , cache_value : cache_value
 					, epcName : epco.epcName
 				} ;
 
 				if( names != undefined ){
+					cacheStr = '' ;
+					if( cache_value != undefined ) cacheStr = ' Cache:'+cache_value ;
+					else if( cache_edt != undefined ) cacheStr = ' Cache:0x'+cache_edt.map(i=>('0'+i.toString(16)).slice(-2)).join('') ;
 					re[epcType].option = {
 						leaf : true
 						,doc : {
-							short : `${epco.epcName} EPC:${epc}`+(cache_value==undefined?'':' Cache:'+cache_value)
+							short : `${epco.epcName} EPC:${epc}`+cacheStr
 							,long : (epco.epcDoc==undefined?undefined:names[epco.epcDoc])
 						}
 					}
@@ -493,19 +500,28 @@ function onProcCall_Get( method , devid , propname , args ){
 		for( var epc in ELDB[eoj].epcs ){
 			var epco = ELDB[eoj].epcs[epc] ;
 			var epcType = epco.epcType ;
-			var cache_value = dev[epcType] ;
+			cache_edt = dev[epcType] ;
+			cache_value = undefined ;
+			if( cache_edt != undefined && epco.edtConvFuncs != undefined && typeof epco.edtConvFuncs[0] == 'function' ){
+				cache_value = epco.edtConvFuncs[0](cache_edt) ;
+			} else if(re[epcType]!=undefined )
+				cache_value = re[epcType].cache_value ;
 			re[epcType] = {
 				super : false
-				, cache : (cache_value==undefined?null:cache_value)
+				, epc : parseInt('0x'+epc)
+				, cache_edt : cache_edt , cache_value : cache_value
 				, epcName : epco.epcName
 				//, epcDoc : (names==undefined||epco.epcDoc==undefined?undefined:names[epco.epcDoc])
 			} ;
 
 			if( names != undefined ){
+				cacheStr = '' ;
+				if( cache_value != undefined ) cacheStr = ' Cache:'+cache_value ;
+				else if( cache_edt != undefined ) cacheStr = ' Cache:0x'+cache_edt.map(i=>('0'+i.toString(16)).slice(-2)).join('') ;
 				re[epcType].option = {
 					leaf : true
 					,doc : {
-						short : `${epco.epcName} EPC:${epc}`+(cache_value==undefined?'':' Cache:'+cache_value)
+						short : `${epco.epcName} EPC:${epc}`+cacheStr
 						,long : (epco.epcDoc==undefined?undefined:names[epco.epcDoc])
 					}
 				}

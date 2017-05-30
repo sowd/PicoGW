@@ -80,11 +80,15 @@ The concept of this API is as follows:
 The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. All APIs exist under **/v1/** (The root **/** access shows the control panel.)
 You can always write the API code in the URL field of your browser (HTTP GET access). Although some API favors HTTP PUT access, you can still mimic it by GET access with **/PUT** added to the end of the original URL. For example, PUT access to the following URL:
 
-> http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/?on
+> PUT http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/
+
+with the body is set as:
+
+> {"value":"on"}
 
 equals to GET access to the following URL:
 
-> http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/PUT?on
+> GET http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/PUT?value=on
 
 Although REST does not recommend to put verb into the URL (URI), we dare to adopt this option, because GET access is extraordinaly easy compared to other methods. In addition, PUT methods is not necessarily supported by all browsers.
 
@@ -98,52 +102,59 @@ The API has a directory structure as follows. The directories right under root (
 
 The structures under a plugin name is a responsibility of the plugin. However, each subdirectory API follows the rule that the resulting JSON object contains further subdirectory name or leaf node name (which is associated with a function).
 
-### /v1/admin
+### GET /v1/admin
 
 Admin plugin root.
 The admin plugin is responsible to logging to network management.
 
-#### /v1/admin/log
+#### GET /v1/admin/log
 
 The log object in the admin plugin.
 
 Currently, logging schedule is written directly into the source code (**v1/plugins/admin/logger.js**), it should be changed through control panel GUI.Properties under this directory is read only.
 
-#### /v1/admin/net
+#### GET /v1/admin/net
 
 The network object in the admin plugin.
 
 This object monitors ARP table and associates IP address with the MAC address to detact change of IP address. PicoGW currently only support IPv4 network. Internally, the detected MAC address is exposed to other plugin to trace devices.
 
-### /v1/echonet
+### GET /v1/echonet
 This path is the ECHONET Lite plugin root.
 The API call returns ECHONET Lite devices ID (internally generated unique ID) with their MAC address and current IP address.
 
-#### /v1/echonet/[DeviceID]
+#### GET /v1/echonet/[DeviceID]
 ECHONET Lite device object.
 [DeviceID] is the unique name of ECHONET Lite device. This call returns ECHONET Lite device's Property IDs (EPC) and its cached value (if exists), and whether the property only exists in the super class (see ECHONET Lite specification). Example call result is :
 
 ![](res/CacheValue.png)
 
-#### **/v1/echonet/[DeviceID]/[PropertyID]**
+#### GET /v1/echonet/[DeviceID]/[PropertyID]
 
 GET access to the ECHONET Lite property.
 This API will send GET request to a ECHONET Lite device and wait until the result is obtained. The API will return error if preset timeout time has past (30s by default.)
 If a vaild value is obtained, the value is stored in the device's cache.
 
-#### **/v1/echonet/[DeviceID]/[PropertyID]?[NEWVAL]** (by HTTP PUT access)
-Equals to HTTP GET access to **/v1/echonet/[DeviceID]/[PropertyID]/PUT?[NEWVAL]**.
-This sends SET access to the ECHONET Lite property. The sent value is specified as [NEWVAL] as hex value (without 0x or any other prefix.) Example:
+#### PUT /v1/echonet/[DeviceID]/[PropertyID]
+This will set a new value to the property. Thew new value is specified in the body text as a JSON object:
 
-> PUT http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/?30
+>{"value":NEWVAL}
 
-will set 0x30 to OperatingState property. Exceptionally and optionally the [NEWVAL] can be more intuitive. For example, OperatingState also accept **on** or **off** word as [NEWVAL].
+This request header must contain "Content-type: application/json".  
+There are serveral ways to specify NEWVAL:
+1. NEWVAL is usually an array of bytes such as **[48]**.
+2. If you want to set it as a hex array, each hex number should be specifies as a string such as **["0x30"]**.
+3. If the length of the array is exactly one, you can directly write the element itself such as **48** or **"0x30"**.
+4. Exceptionally, some properties supports more meaningful string such as **"on"** or **"off"**.
 
-#### **/v1/echonet/[REGEXP]/[PropertyID]**
+This PUT access equals to the GET access of:
+> GET /v1/echonet/[DeviceID]/[PropertyID]/PUT?value=NEWVAL
+
+#### GET /v1/echonet/[REGEXP]/[PropertyID]
 
 ECHONET Lite plugin supports regular expression for device names. For example:
 
-> PUT http://192.168.1.10:8080/v1/echonet/.+/OperatingState/?30
+> PUT http://192.168.1.10:8080/v1/echonet/.+/OperatingState/?value=[48]
 
 will set 0x30 to all existing devices's OperatingState.
 
@@ -170,7 +181,7 @@ In this mode, PicoGW will halt until the client that accesses the named pipe is 
 The API call should be written to *_w* file as a string followed by a newline "\n". The string is a stringified JSON object such as:
 
 ```
-{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","arg":"30"}
+{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","arg":{"value":["0x30"]}}
 ```
 For GET case, **arg** key is not necessary.
 Make sure that this request itself must not contain a newline "\n".
