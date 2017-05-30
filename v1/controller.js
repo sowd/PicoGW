@@ -58,7 +58,7 @@ exports.init = function(_VERSION){
 							{VERSION:VERSION,admin:admin,PubSub:PubSub}
 							,plugin_name) ;
 						var exportmethods = {} ;
-						[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getpath']
+						[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getpath','getprefix']
 							.forEach(methodname => {
 							exportmethods[methodname] = function(){
 								return pc[methodname].apply(pc,arguments);

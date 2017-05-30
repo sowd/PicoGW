@@ -40,7 +40,11 @@ exports.PluginInterface = class {
 	}
 
 	publish (devid, topicname, args) {
-		globals.PubSub.pub(`${this.prefix}/${devid}/${topicname}`,args) ;
+		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
+		var re = {method:'PUB'} ;
+		var path = `/${globals.VERSION}/${this.prefix}/${devid}/${topicname}` ;
+		re[path] = args ;
+		globals.PubSub.pub(path,re /*{method:'PUB',path:path,args:args}*/) ;
 	}
 
 	// Returns promise
@@ -61,5 +65,8 @@ exports.PluginInterface = class {
 	// Get plugin home dir
 	getpath (){
 		return `${globals.VERSION}/plugins/${this.prefix}/`;
+	}
+	getprefix (){
+		return this.prefix;
 	}
 } ;

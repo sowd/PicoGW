@@ -227,7 +227,7 @@ exports.init = function(pi,cmd_opts){
 					if( epcList[epc]=='')	continue ;
 
 					var edt = epcList[epc] = EL.toHexArray(epcList[epc]) ;
-					//var edt = (edtConvFunc==undefined	? epcList[epc] : edtConvFunc(epcList[epc]) ) ;
+					var bEdtUpdated = (JSON.stringify(tgt[epcType]) !== JSON.stringify(edt)) ;
 					tgt[epcType] = edt ;
 
 					// reply of get request? (works only for first OPC)
@@ -243,10 +243,11 @@ exports.init = function(pi,cmd_opts){
 						}	// ESV == '52' is processed outside of epc loop.
 					}
 
-					if( els.TID == '0000' && seoj!='0ef0' /*nodeprofile does not publish*/)
+					if( bEdtUpdated && seoj!='0ef0' /*nodeprofile does not publish*/){
 						pluginInterface.publish(mm.eoj_id_map[els.SEOJ] , epcType
 							, {epc:parseInt('0x'+epc),edt:edt
 							, value:(edtConvFunc==undefined?undefined:edtConvFunc(edt))} ) ;
+					}
 				}
 
 
@@ -406,7 +407,10 @@ function onProcCall( method , _devid , propname , args ){
 						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
-				re.forEach(_re=>{res[_re[0]]=_re[1];}) ;
+				re.forEach(_re=>{
+					var key = `/${VERSION}/${pluginInterface.getprefix()}/${_re[0]}/${propname}` ;
+					res[key]=_re[1];
+				}) ;
 				acpt(res) ;
 			})
 		}) ;
@@ -418,7 +422,10 @@ function onProcCall( method , _devid , propname , args ){
 					.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
-				re.forEach(_re=>{res[_re[0]]=_re[1];}) ;
+				re.forEach(_re=>{
+					var key = `/${VERSION}/${pluginInterface.getprefix()}/${_re[0]}/${propname}` ;
+					res[key]=_re[1];
+				}) ;
 				acpt(res) ;
 			})
 		}) ;

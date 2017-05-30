@@ -83,6 +83,8 @@ exports.ClientInterface = class {
 		}) ;
 	}
 	subscribe (topicname,callback){
+		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
+		this.log('subscribe:'+topicname) ;
 		if( this.subscriptions[topicname] == undefined )
 			this.subscriptions[topicname] = [] ;
 		if( this.subscriptions[topicname].indexOf(callback)>=0 )
@@ -104,12 +106,12 @@ exports.ClientInterface = class {
 	unsubscribeall (topicname){
 		if( topicname == undefined ){
 			for( var tn in this.subscriptions )
-				for( var cb in this.subscriptions[tn] )
-					globals.PubSub.unsub(tn,cb) ;
+				for( var cbi in this.subscriptions[tn] )
+					globals.PubSub.unsub(tn,this.subscriptions[tn][cbi]) ;
 			this.subscriptions = {} ;
 		} else {
-			for( var cb in this.subscriptions[topicname] )
-				globals.PubSub.unsub(topicname,cb) ;
+			for( var cbi in this.subscriptions[topicname] )
+				globals.PubSub.unsub(topicname,this.subscriptions[topicname][cbi]) ;
 			delete this.subscriptions[topicname] ;
 		}
 	}

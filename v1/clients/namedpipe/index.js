@@ -1,3 +1,4 @@
+// namedpipe client
 var VERSION ;
 
 var fs = require('fs');
@@ -26,6 +27,7 @@ exports.init = function(ci,cmd_opts){
 		console.log('Connecting to named pipe '+pipe_prefix+'_r/_w (block until target process is connected.)') ;
 		// Read stream setup
 		var rs = fs.createReadStream(PIPE_NAME.read, 'utf-8');
+		var ws ;
 
 		var readbuf = '' ;
 		rs	.on('data', data=>{
@@ -37,27 +39,46 @@ exports.init = function(ci,cmd_opts){
 
 				focus.split("\n").forEach(req_str=>{
 					var req = JSON.parse(req_str) ;
-					clientInterface.callproc(req.method,req.path,req.arg).then(re=>{
-						ws.write(JSON.stringify(re)+"\n") ;
-					}).catch(e=>{
-						ws.write(JSON.stringify(e)+"\n") ;
-					}) ;
+					if( req.method.toUpperCase() == 'SUB' ){
+						clientInterface.subscribe(req.path,re=>{
+							ws.write(JSON.stringify(re)) ;
+						}) ;
+						ws.write(JSON.stringify({success:true,tid:req.tid}));
+					} else if( req.method.toUpperCase() == 'UNSUB' ){
+						clientInterface.unsubscribeall(req.path) ;
+						ws.write(JSON.stringify({success:true,tid:req.tid}));
+					} else {
+						clientInterface.callproc(req.method,req.path,req.args).then(re=>{
+							re.tid = req.tid ;
+							ws.write(JSON.stringify(re)+"\n") ;
+						}).catch(e=>{
+							e.tid = req.tid ;
+							ws.write(JSON.stringify(e)+"\n") ;
+						}) ;
+					}
 				}) ;
 		    })
 	    	.on('open',()=>{		console.log('Read pipe opened.');})
 	    	.on('error', err =>{	onerror(JSON.stringify(err)); })
-	    	.on('close',()=>{		onerror('Read pipe closed.');}) ;
+	    	.on('close',()=>{
+	    		clientInterface.unsubscribeall();
+	    		onerror('Read pipe closed.');
+	    	}) ;
 
 	    // Write stream setup
-	    var ws = fs.createWriteStream(PIPE_NAME.write, 'utf-8');
+	    ws = fs.createWriteStream(PIPE_NAME.write, 'utf-8');
 	    ws	.on('drain', ()=>{})
 	    	.on('open',()=>{		console.log('Write pipe opened.');})
 	        .on('error', err =>{ onerror(JSON.stringify(err)); })
-	        .on('close', ()=>{ onerror('Write pipe closed.'); })
+	        .on('close', ()=>{
+	    		clientInterface.unsubscribeall();
+	        	onerror('Write pipe closed.');
+	        })
 	        //.on('pipe',  src =>{});
 	} catch (err) {
 		//console.error(err) ;
-	    console.error('Error in opening named pipe '+pipe_prefix+'_r/_w.');
+	    console.error('Error in named pipe communication.');
 	    console.error('Stoped using named pipe.');
+   		clientInterface.unsubscribeall();
 	}
 }

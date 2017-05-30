@@ -184,12 +184,32 @@ In this mode, PicoGW will halt until the client that accesses the named pipe is 
 The API call should be written to *_w* file as a string followed by a newline "\n". The string is a stringified JSON object such as:
 
 ```
-{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","arg":{"value":["0x30"]}}
+{"method":"GET","path":"/v1/echonet/AirConditioner_1/OperatingState/","tid":"RANDOM_STR"}
 ```
-For GET case, **arg** key is not necessary.
+**tid** is the transaction id of the request, which is used to match request and reply (multiple request causes unordered reply.)  
+To set a new value:
+```
+{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","args":{"value":["0x30"]},"tid":"RANDOM_STR"}
+```
+For PUT case, **args** key is necessary.
 Make sure that this request itself must not contain a newline "\n".
 
 The API result can be obtained from reading the *_r* file.
+
+## PubSub
+
+Connection-based API access (named pipe and websocket(in future)) supports PubSub access model.
+
+#### Subscribe
+Send the following JSON to the transport. (wildcard is not supported now)
+
+> {"method":"SUB","path":"/v1/echonet/AirConditioner_1/OperatingState/"}
+
+Then a value change is asynchronously notified by a PUB JSON object.
+
+#### Unsubscribe
+
+> {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState/"}
 
 ## Licenses
 
