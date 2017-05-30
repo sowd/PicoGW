@@ -2,6 +2,9 @@
 
 A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports ECHONET Lite. The license is MIT.
 The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
+## News
+
++ 170530 API changed!
 
 ## Installation & Running
 
@@ -92,7 +95,7 @@ equals to GET access to the following URL:
 
 Although REST does not recommend to put verb into the URL (URI), we dare to adopt this option, because GET access is extraordinaly easy compared to other methods. In addition, PUT methods is not necessarily supported by all browsers.
 
-As shown in the above example, additional parameters are supplied as GET parameter (after **?** character.) This way of parameter specification is applied to all HTTP methods, even for non-GET methods ([Criticisms?](https://github.com/KAIT-HEMS/PicoGW/issues))
+As shown in the above example, this PUT emulation takes additional parameters as GET parameter (after **?** character.)
 
 ### API directory
 
@@ -132,17 +135,17 @@ ECHONET Lite device object.
 #### GET /v1/echonet/[DeviceID]/[PropertyID]
 
 GET access to the ECHONET Lite property.
-This API will send GET request to a ECHONET Lite device and wait until the result is obtained. The API will return error if preset timeout time has past (30s by default.)
+This API will send GET request to a ECHONET Lite device and wait until the result is obtained. The API will return error if preset timeout time has past (30 seconds)
 If a vaild value is obtained, the value is stored in the device's cache.
 
 #### PUT /v1/echonet/[DeviceID]/[PropertyID]
-This will set a new value to the property. Thew new value is specified in the body text as a JSON object:
+This will set a new value (EDT) to the property. Thew new value is specified in the body text as a JSON object:
 
 >{"value":NEWVAL}
 
 This request header must contain "Content-type: application/json".  
 There are serveral ways to specify NEWVAL:
-1. NEWVAL is usually an array of bytes such as **[48]**.
+1. an array of bytes such as **[48]**.
 2. If you want to set it as a hex array, each hex number should be specifies as a string such as **["0x30"]**.
 3. If the length of the array is exactly one, you can directly write the element itself such as **48** or **"0x30"**.
 4. Exceptionally, some properties supports more meaningful string such as **"on"** or **"off"**.
@@ -154,9 +157,9 @@ This PUT access equals to the GET access of:
 
 ECHONET Lite plugin supports regular expression for device names. For example:
 
-> PUT http://192.168.1.10:8080/v1/echonet/.+/OperatingState/?value=[48]
+> PUT http://192.168.1.10:8080/v1/echonet/.+/OperatingState/
 
-will set 0x30 to all existing devices's OperatingState.
+with the body text as {"value":"0x30"} will set 0x30 to all existing devices's OperatingState.
 
 > GET http://192.168.1.10:8080/v1/echonet/(GenericIllumination_1|AirConditioner_1)/OperatingState/
 
