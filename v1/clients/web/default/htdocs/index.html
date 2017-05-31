@@ -10,24 +10,19 @@ The primary distribution site is <a href='https://github.com/KAIT-HEMS/PicoGW'>h
 <hr />
 <div id="resource_tree"></div>
 <hr />
-To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's get access to the property in new tab. If you want set a new value to a property, you access the same URL by PUT method with the desired parameter value. For example:
-<blockquote>
-http://<span class='myip'>[IP address]:8080</span>/v1/echonet/AirConditioner_1/OperatingState/?30
-</blockquote>
-will set 0x30 to OperatingState property (meaning Power ON). If your browser does not support PUT access, you can also mimic it by adding 'PUT' at the end of GET URL. For example:
-<blockquote>
-http://<span class='myip'>[IP address]:8080</span>/v1/echonet/AirConditioner_1/OperatingState/PUT?30
-</blockquote>
+To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's GET access to the property in new tab. The detailed description is on <a href="https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md" target="_blank">GitHub README.</a>.
 <hr />
 <h2>Licenses</h2>
 <h4>MIT</h4>
 <li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
 <li><a href='https://www.jstree.com/' target='_blank'>jsTree</a></li>
 <li><a href='https://www.npmjs.com/package/arped' target='_blank'>arped</a></li>
+<li><a href='https://www.npmjs.com/package/body-parser' target='_blank'>body-parser</a></li>
 <li><a href='https://www.npmjs.com/package/echonet-lite' target='_blank'>echonet-lite</a></li>
 <li><a href='https://www.npmjs.com/package/express' target='_blank'>express</a></li>
 <li><a href='https://www.npmjs.com/package/ipmask' target='_blank'>ipmask</a></li>
 <li><a href='https://www.npmjs.com/package/mime' target='_blank'>mime</a></li>
+<li><a href='https://www.npmjs.com/package/opts' target='_blank'>opts</a></li>
 <li><a href='https://www.npmjs.com/package/ping' target='_blank'>ping</a></li>
 <h4>Apache 2.0</h4>
 <li><a href='https://www.npmjs.com/package/websocket' target='_blank'>websocket</a></li>
