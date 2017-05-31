@@ -70,6 +70,16 @@ exports.start = function(ai){
 			})() ;
 		}
 	},ACCESS_START_WAIT ) ;
+
+	adminInterface.subscribe('.',re=>{
+		delete re.method ;
+		for( var path in re ){
+			if( path.indexOf('/v1/') !=0 ) continue ;
+			var entry = {} ;
+			entry[path] = re[path] ;
+			add_log(path , entry) ;
+		}
+	})
 } ;
 
 exports.getlog = function(path){

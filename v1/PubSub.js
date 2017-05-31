@@ -32,11 +32,10 @@ exports.PubSub = {
 	}
 	, pub : function(topic,msg){
 		var topics = this.topics ;
-		if( topics[topic] == undefined )
-			return ;
-		topics[topic].forEach(function(callback){
-			callback(msg) ;
-		}) ;
+		if( topics[topic] != undefined )
+			topics[topic].forEach(function(callback){ callback(msg) ; }) ;
+		if( topics['.'] != undefined )	// Wildcard topic
+			topics['.'].forEach(function(callback){ callback(msg) ; }) ;
 		log('Publish:'+topic+'=>'+JSON.stringify(msg)) ;
 	}
 } ;
