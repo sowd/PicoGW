@@ -4,17 +4,31 @@
 <link rel="stylesheet" href="js/jstree-themes/default/style.min.css" />
 </head>
 <body>
-<img src='res/PicoGW.png'></img><br />
-A minimalist's home gateway that supports ECHONET Lite. The license is MIT.<br />
-The primary distribution site is <a href='https://github.com/KAIT-HEMS/PicoGW'>here</a>.
-<hr />
+<img src='res/PicoGW.png' style='height:50px;'></img><span style='float:right'>
+A minimalist's home gateway that hosts <a href='http://www.daiwahouse.co.jp/lab/HousingAPI/' target='_blank'>Housing API</a></span>
+<br clear='all'>
+<div id="tabs">
+  <ul>
+    <li><a href="#tabs-resources">Hierarchy</a></li>
+    <li><a href="#tabs-howto">Howto</a></li>
+    <li><a href="#tabs-about">About</a></li>
+  </ul>
+
+<div id='tabs-resources'>
 <div id="resource_tree"></div>
-<hr />
+</div>
+
+<div id='tabs-howto'>
 To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's GET access to the property in new tab. The detailed description is on <a href="https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md" target="_blank">GitHub README.</a>.
-<hr />
+</div>
+
+<div id='tabs-about'>
+This software is originally developed by Shigeru Owada@Kanagawa Instutite of Technology.<br />
+This is distributed from is <a href='https://github.com/KAIT-HEMS/PicoGW' target="_blank">GitHub</a> by MIT license.
 <h2>Licenses</h2>
 <h4>MIT</h4>
 <li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
+<li><a href='https://jqueryui.com/' target='_blank'>jQuery UI</a></li>
 <li><a href='https://www.jstree.com/' target='_blank'>jsTree</a></li>
 <li><a href='https://www.npmjs.com/package/arped' target='_blank'>arped</a></li>
 <li><a href='https://www.npmjs.com/package/body-parser' target='_blank'>body-parser</a></li>
@@ -26,9 +40,14 @@ To access ECHONET Lite device, right click the device's property name (such as O
 <li><a href='https://www.npmjs.com/package/ping' target='_blank'>ping</a></li>
 <h4>Apache 2.0</h4>
 <li><a href='https://www.npmjs.com/package/websocket' target='_blank'>websocket</a></li>
+</div>
+
 </body>
+<link rel="stylesheet" href='js/jquery-ui-1.12.1/jquery-ui.min.css'></script>
+<style>body { font-family: Arial, Helvetica, sans-serif; } table { font-size: 1em; } .ui-draggable, .ui-droppable { background-position: top; }</style>
 <script src='js/jquery-3.1.1.min.js'></script>
-<script src="js/jstree.min.js"></script>
+<script src='js/jquery-ui-1.12.1/jquery-ui.min.js'></script>
+<script src='js/jstree.min.js'></script>
 <script>
 const API_PREFIX = '/v1' ;
 var log = console.log ;
@@ -44,29 +63,37 @@ function t_open(path){
 			,url: API_PREFIX+path_real+'?option=true'
 			,dataType: 'json'
 			,success: function(json){
-				//log(json) ;
+				var id_to_longdoc = {} ;
 				for( var dk in json ){
 					var next_path_id = path+dk+'.' ;
 					var txt = dk;//`${path_real}${dk}` ;
 
-					node_properties[next_path_id] = {isleaf:true,longdoc:undefined} ;
+					node_properties[next_path_id] = {isleaf:true /*,longdoc:undefined*/} ;
 
+					var longdoc ;
 					try {
 						var opt = json[dk].option ;
 						node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
-						var shortdoc = opt.doc.short ;
-						var longdoc = opt.doc.long ;
-						if( shortdoc != undefined ) txt += ' (' + shortdoc +')' ;
-						if( longdoc != undefined)
-							node_properties[next_path_id].longdoc = longdoc ;
+						if( opt.doc.short != undefined ) txt += ' (' + opt.doc.short +')' ;
+
+						longdoc = opt.doc.long ;
+						/*if( longdoc != undefined)
+							node_properties[next_path_id].longdoc = longdoc ;*/
 					} catch(e){}
 
 					res_tree.jstree(
 						'create_node', '#'+path
 						,{ id : next_path_id , text : txt
 						, type : (node_properties[next_path_id].isleaf?'file':'folder')});
+
+					if( longdoc )
+						id_to_longdoc[next_path_id]=longdoc ;
 				}
 				res_tree.jstree('open_node', '#'+path);
+
+				for( var path_id in id_to_longdoc)
+					document.getElementById(path_id).setAttribute('title',id_to_longdoc[path_id]) ;
+				$( document ).tooltip();
 			}
 			,error: ()=>{
 				alert('API call failed:'+path) ;
@@ -75,8 +102,8 @@ function t_open(path){
 	}) ;
 }
 
-$(function () {
-	$('span.myip').text(location.host) ;
+onload = function(){
+	$( "#tabs" ).tabs();	// Stylize by jquery ui
 	// When selected
 	res_tree.on('changed.jstree', function (e, data) {
 		if( data.action == 'select_node' ) {
@@ -114,13 +141,13 @@ $(function () {
         ,contextmenu : {
         	items:node=>{
         		return {
-					Document:  {label:'Document', action:obj=>{
+					/*Document:  {label:'Document', action:obj=>{
 						if( node_properties[node.id].longdoc != undefined )
 							alert(node_properties[node.id].longdoc) ;
 						else
 							alert('No document available.') ;
 					}}
-					,OpenAPI: {label:'Open API',	action:obj=>{
+					,*/OpenAPI: {label:'Open API',	action:obj=>{
 						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
 						window.open(API_PREFIX+path_real,'_blank') ;
 					}}
@@ -149,7 +176,7 @@ $(function () {
 		}
 	});
 	*/
-});
+} ;
 
 
 </script>

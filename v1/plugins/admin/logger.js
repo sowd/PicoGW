@@ -77,6 +77,7 @@ exports.start = function(ai){
 			if( path.indexOf('/v1/') !=0 ) continue ;
 			var entry = {} ;
 			entry[path] = re[path] ;
+			//log('Add_log:'+path+' / '+JSON.stringify(entry)) ;
 			add_log(path , entry) ;
 		}
 	})
