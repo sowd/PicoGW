@@ -213,6 +213,8 @@ Then a value change is asynchronously notified by a PUB JSON object.
 #### MIT
 
 [jQuery](https://jquery.com/)  
+[jQuery UI](https://jqueryui.com/)  
+[JSON Editor](https://github.com/jdorn/json-editor)  
 [jsTree](https://www.jstree.com/)  
 [arped](https://www.npmjs.com/package/arped)  
 [body-parser](https://www.npmjs.com/package/body-parser)  
@@ -222,7 +224,6 @@ Then a value change is asynchronously notified by a PUB JSON object.
 [mime](https://www.npmjs.com/package/mime)  
 [opts](https://www.npmjs.com/package/opts)  
 [ping](https://www.npmjs.com/package/ping)  
-
 
 #### Apache 2
 
