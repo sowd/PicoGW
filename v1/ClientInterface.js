@@ -39,6 +39,33 @@ exports.ClientInterface = class {
     			fs.writeFileSync(LOCAL_STORAGE_PATH,JSON.stringify(st,null,"\t")) ;
 	    	}
 	    } ;
+	    const LOCAL_SETTINGS_PATH = this.getpath()+'settings.json' ;
+	    this.localSettings = {
+	    	clear : function(){ fs.writeFileSync(LOCAL_SETTINGS_PATH,'{}') ;}
+	    	, setItem : function(keyName,keyValue){
+	    		var st = {} ;
+	    		try {
+	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
+	    		} catch(e){}
+	    		st[keyName] = keyValue ;
+    			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
+	    	}
+	    	, getItem : function(keyName , defaultValue){
+	    		var st = {} ;
+	    		try {
+	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
+	    		} catch(e){}
+	    		return st[keyName] == undefined ? defaultValue : st[keyName] ;
+	    	}
+	    	, removeItem : function(keyName){
+	    		var st = {} ;
+	    		try {
+	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
+	    		} catch(e){}
+	    		delete st[keyName] ;
+    			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
+	    	}
+	    } ;
 	}
 	// method:	GET/PUT that go directly to the plugin
 	callproc (method,procedure,args){
@@ -52,12 +79,17 @@ exports.ClientInterface = class {
 				if( procedure.length == 0 ){ // access for '/v1/' => plugin list
 					var ps = {} ;
 					for( var prfx in globals.Plugins ){
+						var plugin = globals.Plugins[prfx] ;
 						ps[prfx] = {
-							path : globals.Plugins[prfx].getpath()
-							, callable: (typeof globals.Plugins[prfx].procCallback == 'function')
+							path : plugin.getpath()
+							, callable: (typeof plugin.procCallback == 'function')
 						} ;
 						if( args.option === 'true')
-							ps[prfx].option = {leaf:false,doc:{short:'Plugin'}}
+							ps[prfx].option = {
+								leaf:false,doc:{short:'Plugin'}
+								,settings_schema : plugin.getSettingsSchema()
+								,settings : plugin.getSettings()
+							}
 					}
 					ac(ps) ;
 					return ;
@@ -84,7 +116,6 @@ exports.ClientInterface = class {
 	}
 	subscribe (topicname,callback){
 		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
-		this.log('subscribe:'+topicname) ;
 		if( this.subscriptions[topicname] == undefined )
 			this.subscriptions[topicname] = [] ;
 		if( this.subscriptions[topicname].indexOf(callback)>=0 )

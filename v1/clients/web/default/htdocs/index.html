@@ -9,7 +9,7 @@ A minimalist's home gateway that hosts <a href='http://www.daiwahouse.co.jp/lab/
 <br clear='all'>
 <div id="tabs">
   <ul>
-    <li><a href="#tabs-resources">Hierarchy</a></li>
+    <li><a href="#tabs-resources">API Hierarchy</a></li>
     <li><a href="#tabs-howto">Howto</a></li>
     <li><a href="#tabs-about">About</a></li>
   </ul>
@@ -24,7 +24,7 @@ To access ECHONET Lite device, right click the device's property name (such as O
 
 <div id='tabs-about'>
 This software is originally developed by Shigeru Owada@Kanagawa Instutite of Technology.<br />
-This is distributed from is <a href='https://github.com/KAIT-HEMS/PicoGW' target="_blank">GitHub</a> by MIT license.
+This is distributed from <a href='https://github.com/KAIT-HEMS/PicoGW' target="_blank">GitHub</a> by MIT license.
 <h2>Licenses</h2>
 <h4>MIT</h4>
 <li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
@@ -41,18 +41,22 @@ This is distributed from is <a href='https://github.com/KAIT-HEMS/PicoGW' target
 <h4>Apache 2.0</h4>
 <li><a href='https://www.npmjs.com/package/websocket' target='_blank'>websocket</a></li>
 </div>
-
 </body>
+
+<!-- Settings dialog -->
+<div id="settings_dialog" title="Settings"> <div id='settings_dlg_json_editor_holder'></div> </div>
+
 <link rel="stylesheet" href='js/jquery-ui-1.12.1/jquery-ui.min.css'></script>
 <style>body { font-family: Arial, Helvetica, sans-serif; } table { font-size: 1em; } .ui-draggable, .ui-droppable { background-position: top; }</style>
 <script src='js/jquery-3.1.1.min.js'></script>
 <script src='js/jquery-ui-1.12.1/jquery-ui.min.js'></script>
 <script src='js/jstree.min.js'></script>
+<script src='js/jsoneditor.min.js'></script>
 <script>
 const API_PREFIX = '/v1' ;
 var log = console.log ;
 var res_tree = $('#resource_tree') ;
-var node_properties = {'.':{isleaf:false,longdoc:undefined}} ;
+var node_properties = {'.':{isleaf:false, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/}} ;
 
 /// Tree activities
 function t_open(path){
@@ -68,17 +72,20 @@ function t_open(path){
 					var next_path_id = path+dk+'.' ;
 					var txt = dk;//`${path_real}${dk}` ;
 
-					node_properties[next_path_id] = {isleaf:true /*,longdoc:undefined*/} ;
+					node_properties[next_path_id] = {isleaf:true, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/} ;
 
 					var longdoc ;
 					try {
 						var opt = json[dk].option ;
 						node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
 						if( opt.doc.short != undefined ) txt += ' (' + opt.doc.short +')' ;
-
 						longdoc = opt.doc.long ;
 						/*if( longdoc != undefined)
 							node_properties[next_path_id].longdoc = longdoc ;*/
+						if( node_properties[next_path_id].settings_schema = opt.settings_schema )
+							txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
+						node_properties[next_path_id].settings = opt.settings ;
+
 					} catch(e){}
 
 					res_tree.jstree(
@@ -140,18 +147,78 @@ onload = function(){
         ,plugins : [ 'contextmenu' , 'types']
         ,contextmenu : {
         	items:node=>{
-        		return {
-					/*Document:  {label:'Document', action:obj=>{
+        		var menu = {} ;
+        		if( node_properties[node.id].settings_schema != undefined ){
+        			menu.Settings = {label:'Settings',action:obj=>{
+	        			// Reload schema and current value
+	        			$.ajax({
+	        				url:API_PREFIX+node.id.split('.').slice(0,-2).join('/')+'/?option=true'
+	        				,type:'GET',dataType:'json',success:json=>{
+	        					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
+	        					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
+	        					node_properties[node.id].settings = new_node_prop.option.settings ;
+
+
+	        				var settings_schema = node_properties[node.id].settings_schema ;
+	        				var settings = node_properties[node.id].settings ;
+	        				var editor = new JSONEditor(
+	        					document.getElementById('settings_dlg_json_editor_holder')
+	        					,{
+	        						schema:settings_schema
+	        						,theme: 'jqueryui'
+	        						,iconlib: 'jqueryui'
+	        						,disable_collapse: true
+	        						,disable_edit_json: true
+	        						,disable_properties: true
+	        					}
+	        				) ;
+	        				if( settings != undefined)
+	        					editor.setValue(settings) ;
+
+	        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
+							$('#settings_dialog').dialog({
+								modal: true
+								, width: '90%'
+								, close : cleanup
+								, buttons: {
+									Apply: function(){
+										var path = node.id.split('.').join('/') ;
+										$.ajax({
+											type: 'POST'
+											,url: API_PREFIX+path+'settings' /*?value='
+												+encodeURIComponent(JSON.stringify(editor.getValue()))*/
+											,dataType: 'json'
+											,data: editor.getValue()
+											,success: json=>{
+												if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+											}
+											,error: json=>{ alert('API call failed:'+path) ; }
+										});
+
+										cleanup() ;
+										$( this ).dialog( "close" );
+									}
+									,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
+								}
+							}) ;
+	        			}}) ;
+
+        			}} ;
+        		}
+
+	        	/*menu.Document = {label:'Document', action:obj=>{
 						if( node_properties[node.id].longdoc != undefined )
 							alert(node_properties[node.id].longdoc) ;
 						else
 							alert('No document available.') ;
-					}}
-					,*/OpenAPI: {label:'Open API',	action:obj=>{
-						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
-						window.open(API_PREFIX+path_real,'_blank') ;
-					}}
-        		} ;
+					}} ;*/
+
+				menu.OpenAPI = {label:'Open API',	action:obj=>{
+					var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+					window.open(API_PREFIX+path_real,'_blank') ;
+				}} ;
+
+        		return menu ;
 			}
 			,select_node: false
         }

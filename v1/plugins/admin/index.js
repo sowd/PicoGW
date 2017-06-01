@@ -64,21 +64,20 @@ function onProcCall( method , devid , propname , args ){
 	switch(method){
 	case 'GET' :
 		return onProcCall_Get( method , devid , propname , args ) ;
+	case 'POST' :
+		if(devid!='settings' || args == undefined)
+			return {error:'The format is wrong for settings.'} ;
+		if( args.schedule instanceof Array && logger.updateschedule(args.schedule) )
+			return {success:true,message:'New schedule settings are successfully saved'} ;
+		else
+			return {error:'Error in saving scheduled logging'} ;
 	}
 	return {error:`The specified method ${method} is not implemented in admin plugin.`} ;
 }
 
 function onProcCall_Get( method , serviceid , propname , args ){
-	/*var _args = argument.split('&') , args = {} ;
-	_args.forEach(eq=>{
-		var terms = eq.split('=');
-		if( terms[0].trim().length==0) return ;
-		args[terms[0]]=(terms.length==1?null:terms[1]);
-	}) ;*/
 	if( serviceid == undefined ){	// access 'admin/' => service list
-		var re = { log:{} , net:{} } ;
-		for( var sc in logger.schedule )
-			re.log[sc]=logger.schedule[sc].description;
+		var re = { log:{schedule:JSON.parse(JSON.stringify(logger.schedule))} , net:{} } ;
 		var macs = ipv4.getmacs() ;
 		for( var mac in macs )
 			re.net[mac] = macs[mac].active ;
@@ -94,15 +93,16 @@ function onProcCall_Get( method , serviceid , propname , args ){
 		var ret ;
 		switch(serviceid){
 			case 'log' :
-				ret = JSON.parse(JSON.stringify(logger.schedule)) ;
-				if( args.option === 'true' ){
-					for( var sc in logger.schedule ){
-						ret[sc].option = {
+				ret = {} ;
+				logger.schedule.forEach(sentry=>{
+					ret[sentry.name] = JSON.parse(JSON.stringify(sentry)) ;
+					if( args.option === 'true' ){
+						ret[sentry.name].option = {
 							leaf:true
-							,doc:{short:logger.schedule[sc].description}
+							,doc:{short:sentry.description}
 						} ;
 					}
-				}
+				}) ;
 				return ret ;
 			case 'net' :
 				var macs = ipv4.getmacs() ;
@@ -129,9 +129,10 @@ function onProcCall_Get( method , serviceid , propname , args ){
 
 	switch(serviceid){
 		case 'log' :
-			if( logger.schedule[propname] == undefined )
+			var sentry = logger.schedule.filter(sentry=>sentry.name==propname) ;
+			if( sentry.length==0 )
 				return {error:'No such schedule name:'+propname} ;
-			return logger.getlog( logger.schedule[propname].path ) ;
+			return logger.getlog( sentry[0].path ) ;
 		case 'net' :
 			var m = ipv4.getmacs()[propname] ;
 			if( m == undefined )

@@ -1,0 +1,22 @@
+{
+	"schedule": [
+		{
+			"name": "echo_allpower",
+			"path": "/v1/echonet/.+/OperatingState",
+			"schedule": ":0,:10,:20,:30,:40,:50",
+			"description": "Power of all ECHONET Lite devices"
+		},
+		{
+			"name": "echo_instpower",
+			"path": "/v1/echonet/PanelboardMetering_.+/InstantaneousPowerMeasurementValue",
+			"schedule": ":0,:30",
+			"description": "Instantaneous power of distribution board"
+		},
+		{
+			"name": "mac_trace",
+			"path": "/v1/admin/net",
+			"schedule": ":0,:10,:20,:30,:40,:50",
+			"description": "Network status"
+		}
+	]
+}

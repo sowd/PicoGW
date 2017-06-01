@@ -11,49 +11,42 @@ const SINGLE_ACCESS_RANDOM_RANGE = 5*1000 ;
 var fs = require('fs');
 var adminInterface ;
 var log = console.log ;
-var localStorage ;
+var localStorage , localSettings ;
 
-exports.schedule = {};
+exports.schedule = [];
 
 exports.start = function(ai){
 	adminInterface = ai ;
 	log = adminInterface.log ;
 	localStorage = adminInterface.localStorage ;
+	localSettings = adminInterface.localSettings ;
 
 	//var EVERYMIN = [] ; for( var ai=0;ai<60;++ai ) EVERYMIN.push(':'+ai) ;
-	exports.schedule = localStorage.getItem('schedule',{
-		echo_allpower : {
-			path : '/v1/echonet/.+/OperatingState'
-			, schedule : [':0',':10',':20',':30',':40',':50']
-			, description : 'Power of all ECHONET Lite devices'
-		}
-		,echo_instpower : {
-			path : '/v1/echonet/PanelboardMetering_.+/InstantaneousPowerMeasurementValue'
-			, schedule : [':0',':30']
-			, description : 'Instantaneous power of distribution board'
-		}
-		, mac_trace : {
-			path : '/v1/admin/net'
-			, schedule : [':0',':10',':20',':30',':40',':50']
-			, description : 'Network status'
-		}
-	}) ;
-	//localStorage.setItem('schedule',schedule) ;
+	exports.schedule = localSettings.getItem('schedule',[]) ;
+	exports.schedule.forEach(sentry=>{
+		sentry.schedule_func = genScheduleFunc(sentry.schedule.split(',')) ;
+	});
 
-	for( var sid in exports.schedule ){
-		exports.schedule[sid].schedule_func
-			= genScheduleFunc(exports.schedule[sid].schedule) ;
-	}
+	var running_schedule_ids = [] ;
+	function startSchedule(){
+		// Start schedule
+		var st_id = setTimeout( ()=>{
+			running_schedule_ids = running_schedule_ids.filter(id => id!=st_id ) ;
 
-	setTimeout( ()=>{
-		for( var _sid in exports.schedule ){
-			(()=>{
-				var sid = _sid ;
-				var spath = exports.schedule[sid].path ;
-				var schedule_func = exports.schedule[sid].schedule_func ;
+			exports.schedule.forEach(sentry=>{
+				var spath = sentry.path ;
+				var schedule_func = sentry.schedule_func ;
 
+				var at_id ;
 				function access_device(){
-					setTimeout( ()=>{
+					running_schedule_ids = running_schedule_ids.filter(id => id!=at_id ) ;
+					at_id = setTimeout( access_device
+						, schedule_func() + SINGLE_ACCESS_DELAY ) ;
+					running_schedule_ids[at_id] = at_id ;
+
+					var t_id = setTimeout( ()=>{
+						running_schedule_ids = running_schedule_ids.filter(id => id!=t_id ) ;
+
 						log('Accessing '+spath);
 						adminInterface.callproc('GET',spath).then(rep=>{
 							add_log(spath,rep) ;
@@ -61,16 +54,42 @@ exports.start = function(ai){
 							add_log(spath,rep) ;
 						}) ;
 					} , parseInt(Math.random()*SINGLE_ACCESS_RANDOM_RANGE) ) ;
-
-					setTimeout( access_device
-						, schedule_func() + SINGLE_ACCESS_DELAY ) ;
+					running_schedule_ids.push(t_id) ;
 				}
-				setTimeout( access_device
+				at_id = setTimeout( access_device
 					, schedule_func() + SINGLE_ACCESS_DELAY ) ;
-			})() ;
-		}
-	},ACCESS_START_WAIT ) ;
+				running_schedule_ids.push(at_id) ;
+			});
+		},ACCESS_START_WAIT ) ;
+		running_schedule_ids.push(st_id) ;
+	}
 
+	exports.updateschedule = function(newschedule){
+		var nscopy = JSON.stringify(newschedule) ;
+		// Validate given schedule
+		var bSuccess = true ;
+		newschedule.forEach(sentry=>{
+			sentry.schedule_func = genScheduleFunc(sentry.schedule.split(',')) ;
+			if( sentry.schedule_func == undefined ) bSuccess = false ;
+		});
+		if( !bSuccess ) return false ;
+
+		// Stop schedule
+		running_schedule_ids.forEach(clearTimeout) ;
+		running_schedule_ids = [] ;
+
+		// Save new schedule
+		localSettings.setItem('schedule',JSON.parse(nscopy)) ;
+		exports.schedule = newschedule ;
+
+		// Restart schedule
+		startSchedule() ;
+		return true ;
+	} ;
+
+	startSchedule() ;
+
+	// Save all publications
 	adminInterface.subscribe('.',re=>{
 		delete re.method ;
 		for( var path in re ){
@@ -80,7 +99,7 @@ exports.start = function(ai){
 			//log('Add_log:'+path+' / '+JSON.stringify(entry)) ;
 			add_log(path , entry) ;
 		}
-	})
+	});
 } ;
 
 exports.getlog = function(path){
@@ -114,15 +133,21 @@ exports.getlog = function(path){
 // Log scheduler
 function genScheduleFunc(timing_array){
 	var times=[] ;
+	var bSuccess = true ;
 	timing_array.forEach(ta=>{
+		if( ta.indexOf(':')<0 ){bSuccess = false ; return ; }
+
 		if( ta.charAt(0) == ':'){
 			for( var h=0;h<24;++h )
 				times.push((h*60+parseInt(ta.slice(1))) *60*1000) ;
 		} else {
 			ta = ta.split(':') ;
+			if( ta.length != 2){ bSuccess = false ; return ; }	// fail
 			times.push( (parseInt(ta[0])*60+parseInt(ta[1])) *60*1000) ;
 		}
 	}) ;
+	if( !bSuccess ) return ;
+
 	times.sort((a,b)=>a-b) ;
 	//log(times) ;
 	return ()=>{

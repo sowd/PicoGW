@@ -44,6 +44,7 @@ exports.init = function(_VERSION){
 				fs.readdir( PLUGINS_FOLDER, (err, files) => {
 					if (err){ rj('No plugin folder found.'); return; }
 
+					// Admin plugin should be initialized first.
 					var plugin_names = ['admin'] ;
 					files.filter(dirname => {
 						return fs.lstatSync(PLUGINS_FOLDER + dirname).isDirectory();
@@ -58,13 +59,14 @@ exports.init = function(_VERSION){
 							{VERSION:VERSION,admin:admin,PubSub:PubSub}
 							,plugin_name) ;
 						var exportmethods = {} ;
-						[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getpath','getprefix']
+						[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema','getSettings','getpath','getprefix']
 							.forEach(methodname => {
 							exportmethods[methodname] = function(){
 								return pc[methodname].apply(pc,arguments);
 							} ;
 						}) ;
 						exportmethods.localStorage = pc.localStorage ;
+						exportmethods.localSettings = pc.localSettings ;
 
 						if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
 							var ci = new ClientInterface(
@@ -130,6 +132,7 @@ exports.init = function(_VERSION){
 							} ;
 						}) ;
 						exportmethods.localStorage = ci.localStorage ;
+						exportmethods.localSettings = ci.localSettings ;
 						try {
 							Promise.all([require('./clients/' + client_name + '/index.js').init(exportmethods,cmd_opts)]).then(()=>{
 								Clients[client_name] = ci ;
