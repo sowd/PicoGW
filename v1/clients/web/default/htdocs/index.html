@@ -19,29 +19,19 @@ A minimalist's home gateway that hosts <a href='http://www.daiwahouse.co.jp/lab/
 </div>
 
 <div id='tabs-howto'>
-To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's GET access to the property in new tab. The detailed description is on <a href="https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md" target="_blank">GitHub README.</a>.
+To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's GET access to the property in new tab.
+<div id='api_howto'>
+ The detailed description is on <a href="https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md" target="_blank">GitHub README.</a>.
+</div>
 </div>
 
 <div id='tabs-about'>
 This software is originally developed by Shigeru Owada@Kanagawa Instutite of Technology.<br />
 This is distributed from <a href='https://github.com/KAIT-HEMS/PicoGW' target="_blank">GitHub</a> by MIT license.
-<h2>Licenses</h2>
-<h4>MIT</h4>
-<li><a href='https://jquery.com/' target='_blank'>jQuery</a></li>
-<li><a href='https://jqueryui.com/' target='_blank'>jQuery UI</a></li>
-<li><a href='https://github.com/jdorn/json-editor' target='_blank'>JSON Editor</a></li>
 
-<li><a href='https://www.jstree.com/' target='_blank'>jsTree</a></li>
-<li><a href='https://www.npmjs.com/package/arped' target='_blank'>arped</a></li>
-<li><a href='https://www.npmjs.com/package/body-parser' target='_blank'>body-parser</a></li>
-<li><a href='https://www.npmjs.com/package/echonet-lite' target='_blank'>echonet-lite</a></li>
-<li><a href='https://www.npmjs.com/package/express' target='_blank'>express</a></li>
-<li><a href='https://www.npmjs.com/package/ipmask' target='_blank'>ipmask</a></li>
-<li><a href='https://www.npmjs.com/package/mime' target='_blank'>mime</a></li>
-<li><a href='https://www.npmjs.com/package/opts' target='_blank'>opts</a></li>
-<li><a href='https://www.npmjs.com/package/ping' target='_blank'>ping</a></li>
-<h4>Apache 2.0</h4>
-<li><a href='https://www.npmjs.com/package/websocket' target='_blank'>websocket</a></li>
+<div id='license_text'>
+The external libraries used and their licenses are listed in <a href='https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md' target='_blank'>GitHub README</a>.
+</div>
 </div>
 </body>
 
@@ -54,6 +44,7 @@ This is distributed from <a href='https://github.com/KAIT-HEMS/PicoGW' target="_
 <script src='js/jquery-ui-1.12.1/jquery-ui.min.js'></script>
 <script src='js/jstree.min.js'></script>
 <script src='js/jsoneditor.min.js'></script>
+<script src='js/marked.min.js'></script>
 <script>
 const API_PREFIX = '/v1' ;
 var log = console.log ;
@@ -230,6 +221,26 @@ onload = function(){
 		}
     }) ;
 
+
+	// Load README document from GitHub
+	$.ajax({
+		type: 'GET'
+		,url: 'https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/README.md'
+		,success: content=>{
+			const START_POINT = content.indexOf('## Web API') ;
+			const LICENSE_POINT = content.indexOf('## Licenses') ;
+			var apihowto = content.slice( START_POINT , LICENSE_POINT) ;
+			var license = content.slice( LICENSE_POINT ) ;
+			apihowto=apihowto.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
+			license=license.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
+
+			$('#api_howto').html(marked(apihowto)) ;
+			$('#license_text').html(marked(license)) ;
+			//console.log(readme) ;
+			//if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+		}
+		,error: err=>{ alert('README file cannot be loaded.') ; }
+	});
 
 
     /*var connection = new WebSocket('ws://192.168.126.103:8080/v1' ,['picogw']);
