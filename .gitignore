@@ -2,6 +2,8 @@
 localstorage.json
 v1/plugins/admin/log/*
 !v1/plugins/admin/log/description.txt
+htdocs/custom
+
 
 # Logs
 logs
