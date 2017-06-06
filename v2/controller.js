@@ -1,10 +1,9 @@
 "use strict";
 
-var VERSION = 'v2';
+const VERSION = 'v2';
 //var fs = require('fs');
 
 exports.init = function(cmd_opts){
-	console.log('API version '+VERSION+' initialized.') ;
 	return Promise.resolve({}) ;
 } ;
 

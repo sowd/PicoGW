@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 var fs = require('fs');
 var mime = require('mime') ;
 
-const VERSIONS = [/*'v1',*/'v2'] ;
+const VERSIONS = ['v1','v2'] ;
 var VERSION_CTRLS = {} ;	// Stores controller objects
 var log = console.log ;
 
@@ -36,7 +36,9 @@ cmd_opts.parse([
 // Initialize each versions and store controller objects into VERSION_CTRLS
 VERSIONS.forEach(VERSION=>{
 	var ctrl = require('./'+VERSION+'/controller.js') ;
-	ctrl.init(cmd_opts).then(re=>{}).catch(console.error) ;
+	ctrl.init(cmd_opts).then(re=>{
+		console.log('API version '+VERSION+' initialized.') ;
+	}).catch(console.error) ;
 	VERSION_CTRLS[VERSION] = ctrl ;
 }) ;
 
@@ -60,7 +62,7 @@ VERSIONS.forEach(VERSION=>{
 	http.all(`/${VERSION}/*`, function(req, res, next){
 		// for( var e in req ){if( typeof req[e] == 'string') log(e+':'+req[e]);}
 		// var caller_ip = req.ip ;
-		var path = req.path ; //.substring(`/${VERSION}/`.length).trim() ;
+		var path = req.path.substring(`/${VERSION}/`.length).trim() ;
 		var args = req.body ;
 		// Overwrite args in body with GET parameters
 		if( req.originalUrl.indexOf('?') >= 0 ){
