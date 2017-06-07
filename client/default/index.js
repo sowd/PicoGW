@@ -34,7 +34,6 @@ exports.init = function(globals,cmd_opts){
 		http.all(`/${VERSION}/*`, function(req, res, next){
 			// for( var e in req ){if( typeof req[e] == 'string') log(e+':'+req[e]);}
 			// var caller_ip = req.ip ;
-			var path = req.path.substring(`/${VERSION}/`.length).trim() ;
 			var args = req.body ;
 			// Overwrite args in body with GET parameters
 			if( req.originalUrl.indexOf('?') >= 0 ){
@@ -44,7 +43,7 @@ exports.init = function(globals,cmd_opts){
 					else					args[terms[0]] = decodeURIComponent(terms[1]) ;
 				}) ;
 			}
-			VERSION_CTRLS[VERSION].callproc({method:req.method,path:path,args:args})
+			globals.callproc({method:req.method,path:req.path,args:args})
 				.then( re=>{res.jsonp(re);} ).catch(console.error) ;
 
 		}) ;

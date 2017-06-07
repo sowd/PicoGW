@@ -46,9 +46,19 @@ const client = require(CLIENT_PATH+'/index.js') ;
 client.init(
 	{
 		VERSIONS:VERSIONS
-		,VERSION_CTRLS:VERSION_CTRLS
 		,CLIENT_PATH:CLIENT_PATH
+        ,callproc : params => {
+            var pathsplit = params.path.split('/') ;
+            if( VERSION_CTRLS[pathsplit[1]] != undefined ){
+
+                return VERSION_CTRLS[pathsplit[1]].callproc({
+                    method:params.method
+                    ,path:params.path.slice( `/${pathsplit[1]}/`.length )
+                    ,args:params.args
+                }) ;
+            }
+            return Promise.reject({error:`No such version: ${pathsplit[1]}`}) ;
+        }
 	},cmd_opts) ;
 
 console.log('PicoGW started.') ;
-

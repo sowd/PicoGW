@@ -38,11 +38,14 @@ exports.ClientInterface = class {
 				}
 				var terms = procedure.split('/') ;
 				var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms[2] ;
+
+
 				if( pdevid != undefined && pdevid.length==0 )		pdevid = undefined ;
 				if( ppropname != undefined && ppropname.length==0 )	ppropname = undefined ;
 				if( terms.length > 3 && terms[3].length>0)	method = terms[3] ;
 				var proccallback = globals.Plugins[pprefix].procCallback ;
 				if( typeof proccallback == 'function'){
+
 					var bReplied = false ;
 					Promise.all([proccallback(method.toUpperCase(),pdevid,ppropname,args)])
 						.then(re=>{

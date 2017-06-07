@@ -9,7 +9,7 @@ var DEVICE_MULTICAST_INTITIAL_NUMBER = 4 ;
 const DEVICE_MULTICAST_INITIAL_INTERVAL = 15*1000 ;
 const DEVICE_MULTICAST_INTERVAL = 60*1000 ;
 
-var VERSION ;
+var VERSION = 'v1';
 
 // If you add 'makercode' entry to localstorage.json (as a number), the number is
 // loaded to this MAKER_CODE variable.
@@ -83,7 +83,6 @@ function getMacFromDeviceId(device_id){
 var ELDB = {} ;
 
 exports.init = function(pi,cmd_opts){
-	VERSION = cmd_opts.VERSION ;
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
 	localStorage = pluginInterface.localStorage ;
