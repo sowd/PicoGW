@@ -50,8 +50,7 @@ exports.init = function(cmd_opts){
 
 					if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
 						var ci = new ClientInterface(
-							{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT}
-							,plugin_name) ;
+							{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT} ) ;
 						['callproc','subscribe','unsubscribe','unsubscribeall','log'
 						,'get_expanded_paths_from_regexp_path'].forEach(methodname => {
 							exportmethods[methodname] = function(){
