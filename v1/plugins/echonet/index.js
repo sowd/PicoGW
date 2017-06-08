@@ -203,8 +203,8 @@ exports.init = function(pi,cmd_opts){
 				}
 
 
+				var tgt = (seoj=='0ef0' ? mm.nodeprofile : mm.devices[ mm.eoj_id_map[els.SEOJ] ]) ;
 				for( var epc in epcList ) {
-					var tgt = (seoj=='0ef0' ? mm.nodeprofile : mm.devices[ mm.eoj_id_map[els.SEOJ] ]) ;
 
 					var epco = undefined , epcType = undefined , edtConvFunc = undefined ;
 					if( seoj != '0ef0'){
@@ -254,7 +254,17 @@ exports.init = function(pi,cmd_opts){
 				// Reply of SetC request
 				if( procCallWaitList[els.TID] != undefined ){
 					if( els.ESV == '71' ){	// accepted
-						procCallWaitList[els.TID]({epc:parseInt('0x'+els.DETAIL.slice(0,2)),success:'SetC request accepted.'}) ;
+						var epc_hex = els.DETAIL.slice(0,2) ;
+						var epco = ELDB[seoj].epcs[epc_hex] ;
+						var ret = {epc:parseInt('0x'+epc_hex) , epcName : epco.epcName , success:'SetC request accepted.'} ;
+						var cache = tgt[epco.epcType] ;
+						if( cache.cache ){
+							ret.cache_edt = cache.cache ; ret.cache_timestamp = cache.timestamp ;
+							var convfuncs = epco.edtConvFuncs || ELDB['0000'].epcs[epc_hex].edtConvFuncs ;
+							if( convfuncs != undefined )
+								ret.cache_value = convfuncs[0](cache.cache) ;
+						}
+						procCallWaitList[els.TID](ret) ;
 						delete procCallWaitList[els.TID] ;
 					} else if( els.ESV == '51' || els.ESV == '52' ){	// cannot reply
 						procCallWaitList[els.TID]({error:'Cannot complete the request.',els:els}) ;
@@ -518,7 +528,7 @@ function onProcCall_Get( method , devid , propname , args ){
 				cache_edt = dev[epcType].cache ;
 				cache_timestamp = dev[epcType].timestamp ;
 			}
-			cache_value = undefined ;
+			//cache_value = undefined ;
 			if( cache_edt != undefined && epco.edtConvFuncs != undefined && typeof epco.edtConvFuncs[0] == 'function' ){
 				cache_value = epco.edtConvFuncs[0](cache_edt) ;
 			} else if(re[epcType]!=undefined )
