@@ -226,8 +226,9 @@ exports.init = function(pi,cmd_opts){
 					if( epcList[epc]=='')	continue ;
 
 					var edt = epcList[epc] = EL.toHexArray(epcList[epc]) ;
-					var bEdtUpdated = (JSON.stringify(tgt[epcType]) !== JSON.stringify(edt)) ;
-					tgt[epcType] = edt ;
+					var bEdtUpdated = (tgt[epcType]==undefined || JSON.stringify(tgt[epcType].cache) !== JSON.stringify(edt)) ;
+					if(bEdtUpdated)		tgt[epcType] = { cache : edt , timestamp : Date.now() } ;
+					else 				tgt[epcType].timestamp = Date.now() ;
 
 					// reply of get request? (works only for first OPC)
 					// Ideally, this process should be outside of epc loop, but
@@ -471,20 +472,25 @@ function onProcCall_Get( method , devid , propname , args ){
 		}
 
 		var re = {} ;
-		var cache_edt,cache_value,cacheStr ;
+		var cache_edt, cache_value, cacheStr , cache_timestamp ;
+		// Super class
 		if( eoj != '0ef0'){
 			for( var epc in ELDB['0000'].epcs ){
 				var epco = ELDB['0000'].epcs[epc] ;
 				var epcType = epco.epcType ;
-				cache_edt = dev[epcType] ;
-				cache_value = undefined ;
+				cache_edt = cache_value = cacheStr = cache_timestamp = undefined ;
+				if( dev[epcType] != undefined ){
+					cache_edt = dev[epcType].cache ;
+					cache_timestamp = dev[epcType].timestamp ;
+				}
+				// cache_value = undefined ;
 
 				if( cache_edt != undefined && epco.edtConvFuncs != undefined && typeof epco.edtConvFuncs[0] == 'function' )
 					cache_value = epco.edtConvFuncs[0](cache_edt) ;
 				re[epcType] = {
 					super : true
 					, epc : parseInt('0x'+epc)
-					, cache_edt : cache_edt , cache_value : cache_value
+					, cache_edt : cache_edt , cache_value : cache_value , cache_timestamp : cache_timestamp
 					, epcName : epco.epcName
 				} ;
 
@@ -503,10 +509,15 @@ function onProcCall_Get( method , devid , propname , args ){
 			}
 		}
 
+
 		for( var epc in ELDB[eoj].epcs ){
 			var epco = ELDB[eoj].epcs[epc] ;
 			var epcType = epco.epcType ;
-			cache_edt = dev[epcType] ;
+			cache_edt = cache_value = cacheStr = cache_timestamp = undefined ;
+			if( dev[epcType] != undefined ){
+				cache_edt = dev[epcType].cache ;
+				cache_timestamp = dev[epcType].timestamp ;
+			}
 			cache_value = undefined ;
 			if( cache_edt != undefined && epco.edtConvFuncs != undefined && typeof epco.edtConvFuncs[0] == 'function' ){
 				cache_value = epco.edtConvFuncs[0](cache_edt) ;
@@ -515,7 +526,7 @@ function onProcCall_Get( method , devid , propname , args ){
 			re[epcType] = {
 				super : false
 				, epc : parseInt('0x'+epc)
-				, cache_edt : cache_edt , cache_value : cache_value
+				, cache_edt : cache_edt , cache_value : cache_value , cache_timestamp : cache_timestamp
 				, epcName : epco.epcName
 				//, epcDoc : (names==undefined||epco.epcDoc==undefined?undefined:names[epco.epcDoc])
 			} ;
@@ -533,6 +544,7 @@ function onProcCall_Get( method , devid , propname , args ){
 				}
 			}
 		}
+
 		delete names ;
 
 		return re ;
