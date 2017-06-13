@@ -1,6 +1,6 @@
 // Admin is a plugin, as well as a client.
 
-var VERSION ;
+var VERSION = 'v1';
 
 var adminInterface ;
 var log = console.log ;
@@ -8,10 +8,9 @@ var log = console.log ;
 var ipv4 = require('./ipv4.js');
 var logger = require('./logger.js');
 
-exports.init = function(ai,cmd_opts){
+exports.init = function(ai){
 	adminInterface = ai ;
 	log = adminInterface.log ;
-	VERSION = cmd_opts.VERSION ;
 	
 	ipv4.setNetCallbackFunctions(
 		function(newid,newip){

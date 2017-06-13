@@ -4,18 +4,16 @@ const VERSION = 'v1';
 const CALL_TIMEOUT = 60*1000 ;
 
 var fs = require('fs');
-var PubSub = require('./PubSub.js').PubSub;
+
 var PluginInterface = require('./PluginInterface.js').PluginInterface ;
-var ClientInterface = require('./ClientInterface.js').ClientInterface ;
 
 var log = console.log ;
 var admin ;
 
-var Plugins = {} , clientInterface ;
-exports.init = function(cmd_opts){
-	clientInterface = new ClientInterface(
-		{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT}) ;
-
+var globals ;
+var Plugins = {} ;//, clientInterface ;
+exports.init = function(_globals,clientFactory){
+	globals = _globals ;
 	return new Promise( function(ac,rj){
 		// Scan plugins
 		const PLUGINS_FOLDER = './'+VERSION+'/plugins/' ;
@@ -26,6 +24,7 @@ exports.init = function(cmd_opts){
 
 				// Admin plugin should be initialized first.
 				var plugin_names = ['admin'] ;
+
 				files.filter(dirname => {
 					return fs.lstatSync(PLUGINS_FOLDER + dirname).isDirectory();
 				}).forEach(dirname => {
@@ -36,7 +35,7 @@ exports.init = function(cmd_opts){
 		   	 	function registerplugin(){
 		   	 		var plugin_name = plugin_names.shift() ;
 					var pc = new PluginInterface(
-						{VERSION:VERSION,admin:admin,PubSub:PubSub}
+						{VERSION:VERSION,admin:admin,PubSub:globals.PubSub}
 						,plugin_name) ;
 					var exportmethods = {} ;
 					[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema','getSettings','getpath','getprefix']
@@ -49,19 +48,17 @@ exports.init = function(cmd_opts){
 					exportmethods.localSettings = pc.localSettings ;
 
 					if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
-						var ci = new ClientInterface(
-							{VERSION:VERSION,PubSub:PubSub,Plugins:Plugins,CALL_TIMEOUT:CALL_TIMEOUT} ) ;
-						['callproc','subscribe','unsubscribe','unsubscribeall','log'
-						,'get_expanded_paths_from_regexp_path'].forEach(methodname => {
-							exportmethods[methodname] = function(){
-								return ci[methodname].apply(ci,arguments);
+						var ci = clientFactory() ;
+						['callproc','subscribe','unsubscribe','unsubscribeall'].forEach(mname=>{
+							exportmethods[mname] = function(){
+								return ci[mname].apply(ci,arguments);
 							} ;
-						}) ;
+						});
 					}
 					try {
 						var pobj = require('./plugins/' + plugin_name + '/index.js') ;
 						// Plugin init must return procedure call callback function.
-						Promise.all([pobj.init(exportmethods,cmd_opts)]).then( p => {
+						Promise.all([pobj.init(exportmethods /*,globals*/)]).then( p => {
 							pc.procCallback = p[0] ;
 
 							Plugins[plugin_name] = pc ;
@@ -86,5 +83,52 @@ exports.init = function(cmd_opts){
 } ;
 
 exports.callproc = function(params){
-	return clientInterface.callproc(params.method,params.path,params.args) ;
+	//return clientInterface.callproc(params.method,params.path,params.args) ;
+
+	var method = params.method ;
+	var procedure = params.path ;
+	var args = params.args ;
+	if(args==undefined) args={} ;
+
+	return new Promise( (ac,rj)=>{
+		try {
+			if( procedure.length == 0 ){ // access for '/v1/' => plugin list
+				var ps = {} ;
+				for( var prfx in Plugins ){
+					var plugin = Plugins[prfx] ;
+					ps[prfx] = {
+						path : plugin.getpath()
+						, callable: (typeof plugin.procCallback == 'function')
+					} ;
+					if( args.option === 'true')
+						ps[prfx].option = {
+							leaf:false,doc:{short:'Plugin'}
+							,settings_schema : plugin.getSettingsSchema()
+							,settings : plugin.getSettings()
+						}
+				}
+				ac(ps) ;
+				return ;
+			}
+			var terms = procedure.split('/') ;
+			var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms[2] ;
+
+
+			if( pdevid != undefined && pdevid.length==0 )		pdevid = undefined ;
+			if( ppropname != undefined && ppropname.length==0 )	ppropname = undefined ;
+			if( terms.length > 3 && terms[3].length>0)	method = terms[3] ;
+			var proccallback = Plugins[pprefix].procCallback ;
+			if( typeof proccallback == 'function'){
+
+				var bReplied = false ;
+				Promise.all([proccallback(method.toUpperCase(),pdevid,ppropname,args)])
+					.then(re=>{ if( !bReplied ){ bReplied = true ; ac(re[0]); } })
+					.catch(re=>{ if( !bReplied ){ bReplied = true ; rj(re[0]); } }) ;
+				setTimeout(()=>{if( !bReplied ){ bReplied = true ; rj({error:`GET request timeout:${pdevid}/${ppropname}`})}}
+					,CALL_TIMEOUT) ;
+			} else rj('Procedure callback is not defined for the plugin '+pprefix) ;
+		} catch(e){
+			rj('Invalidly formatted procedure: ' + procedure);
+		} ;
+	}) ;
 } ;

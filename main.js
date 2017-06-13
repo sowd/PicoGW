@@ -27,38 +27,21 @@ cmd_opts.parse([
     },
 ],true);
 
+// Start clients
+const PubSub = require('./clients/PubSub.js').PubSub ;
+const client = require('./clients/index.js') ;
+client.init( { VERSIONS:VERSIONS,VERSION_CTRLS:VERSION_CTRLS,PubSub:PubSub,cmd_opts:cmd_opts } ).catch(e=>{
+    console.error('Client initialization failed: '+e) ;
+})
+
+
 // Initialize each versions and store controller objects into VERSION_CTRLS
 VERSIONS.forEach(VERSION=>{
-	var ctrl = require('./'+VERSION+'/controller.js') ;
-	ctrl.init(cmd_opts).then(re=>{
-		log('API version '+VERSION+' initialized.') ;
-	}).catch(console.error) ;
-	VERSION_CTRLS[VERSION] = ctrl ;
+    var ctrl = require('./'+VERSION+'/controller.js') ;
+    ctrl.init({PubSub:PubSub,cmd_opts:cmd_opts},client.clientFactory).then(re=>{
+        log('API version '+VERSION+' initialized.') ;
+    }).catch(console.error) ;
+    VERSION_CTRLS[VERSION] = ctrl ;
 }) ;
-
-// Start client
-var CLIENT_PATH = './client/custom';
-try {
-	fs.statSync(CLIENT_PATH) ;
-} catch(e){CLIENT_PATH = './client/default';}
-
-const client = require(CLIENT_PATH+'/index.js') ;
-client.init(
-	{
-		VERSIONS:VERSIONS
-		,CLIENT_PATH:CLIENT_PATH
-        ,callproc : params => {
-            var pathsplit = params.path.split('/') ;
-            if( VERSION_CTRLS[pathsplit[1]] != undefined ){
-
-                return VERSION_CTRLS[pathsplit[1]].callproc({
-                    method:params.method
-                    ,path:params.path.slice( `/${pathsplit[1]}/`.length )
-                    ,args:params.args
-                }) ;
-            }
-            return Promise.reject({error:`No such version: ${pathsplit[1]}`}) ;
-        }
-	},cmd_opts) ;
 
 console.log('PicoGW started.') ;

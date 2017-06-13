@@ -6,17 +6,17 @@ const bodyParser = require('body-parser');
 var mime = require('mime') ;
 var fs = require('fs');
 
+var clientInterface , globals;
 
 var log = (msg) => { console.log('client> '+msg); };
 
-exports.init = function(globals,cmd_opts){
-	var VERSIONS = globals.VERSIONS ;
-	var VERSION_CTRLS = globals.VERSION_CTRLS ;
-	var CLIENT_PATH = globals.CLIENT_PATH ;
+exports.init = function(_clientInterface,_globals){
+	clientInterface = _clientInterface ;
+	globals = _globals ;
 
-	var SERVER_PORT = cmd_opts.get('port') || 8080 ;
+	log = clientInterface.log ;
 
-
+	var SERVER_PORT = globals.cmd_opts.get('port') || 8080 ;
 
 	var http = express() ;
 	http.use(bodyParser.urlencoded({ extended: true }));
@@ -30,7 +30,7 @@ exports.init = function(globals,cmd_opts){
 	}) ;
 
 	// REST API call
-	VERSIONS.forEach(VERSION=>{
+	globals.VERSIONS.forEach(VERSION=>{
 		http.all(`/${VERSION}/*`, function(req, res, next){
 			// for( var e in req ){if( typeof req[e] == 'string') log(e+':'+req[e]);}
 			// var caller_ip = req.ip ;
@@ -43,8 +43,8 @@ exports.init = function(globals,cmd_opts){
 					else					args[terms[0]] = decodeURIComponent(terms[1]) ;
 				}) ;
 			}
-			globals.callproc({method:req.method,path:req.path,args:args})
-				.then( re=>{res.jsonp(re);} ).catch(console.error) ;
+			clientInterface.callproc({method:req.method,path:req.path,args:args})
+				.then( re=>{res.jsonp(re);} ).catch( re=>{res.jsonp(re);} /*console.error*/ ) ;
 
 		}) ;
 	}) ;
@@ -54,7 +54,7 @@ exports.init = function(globals,cmd_opts){
 		var path = req.path ;
 		if( path.charAt(path.length-1)=='/')	path += 'index.html' ;
 
-		fs.readFile(CLIENT_PATH+'/htdocs'+path,(err,data)=>{
+		fs.readFile(__filename.split('/').slice(0,-1).join('/')+'/htdocs'+path,(err,data)=>{
 			if(err){
 				res.status(404).send('No such resource');
 				return ;

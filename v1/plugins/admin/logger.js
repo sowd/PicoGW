@@ -48,7 +48,7 @@ exports.start = function(ai){
 						running_schedule_ids = running_schedule_ids.filter(id => id!=t_id ) ;
 
 						log('Accessing '+spath);
-						adminInterface.callproc('GET',spath).then(rep=>{
+						adminInterface.callproc({method:'GET',path:spath}).then(rep=>{
 							add_log(spath,rep) ;
 						}).catch(rep=>{
 							add_log(spath,rep) ;

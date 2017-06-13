@@ -82,7 +82,7 @@ function getMacFromDeviceId(device_id){
 
 var ELDB = {} ;
 
-exports.init = function(pi,cmd_opts){
+exports.init = function(pi /*,globals*/){
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
 	localStorage = pluginInterface.localStorage ;
