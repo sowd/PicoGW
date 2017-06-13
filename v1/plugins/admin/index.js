@@ -1,7 +1,3 @@
-// Admin is a plugin, as well as a client.
-
-var VERSION = 'v1';
-
 var pluginInterface ;
 var log = console.log ;
 
@@ -35,9 +31,6 @@ exports.init = function(pi){
 		}
 	) ;
 
-	//logger.start(pluginInterface) ;
-	// log(JSON.stringify(logger.schedule)) ;
-	
 	// Plugin must return (possibly in promise) procedure call callback function.
 	// The signature is ( method , devid , propertyname , argument )
 	return onProcCall ;
@@ -81,10 +74,9 @@ function onProcCall_Get( method , serviceid , propname , args ){
 		for( var mac in macs )
 			re.net[mac] = macs[mac].active ;
 
-		if( args.option === 'true' ){
-			//re.log.option={leaf:false,doc:{short:'Scheduled logging function'}} ;
+		if( args.option === 'true' )
 			re.net.option={leaf:false,doc:{short:'Mac address of recognized network peers'}} ;
-		}
+
 		return re ;
 	}
 

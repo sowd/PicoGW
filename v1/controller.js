@@ -48,18 +48,10 @@ exports.init = function(_globals,clientFactory){
 					exportmethods.localStorage = pc.localStorage ;
 					exportmethods.localSettings = pc.localSettings ;
 
-					/*if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
-						var ci = clientFactory() ;
-						['callproc','subscribe','unsubscribe','unsubscribeall'].forEach(mname=>{
-							exportmethods[mname] = function(){
-								return ci[mname].apply(ci,arguments);
-							} ;
-						});
-					}*/
 					try {
 						var pobj = require('./plugins/' + plugin_name + '/index.js') ;
 						// Plugin init must return procedure call callback function.
-						Promise.all([pobj.init(exportmethods /*,globals*/)]).then( p => {
+						Promise.all([pobj.init(exportmethods)]).then( p => {
 							pc.procCallback = p[0] ;
 
 							Plugins[plugin_name] = pc ;
@@ -84,8 +76,6 @@ exports.init = function(_globals,clientFactory){
 } ;
 
 exports.callproc = function(params){
-	//return clientInterface.callproc(params.method,params.path,params.args) ;
-
 	var method = params.method ;
 	var procedure = params.path ;
 	var args = params.args ;
