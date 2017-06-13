@@ -1,7 +1,7 @@
 "use strict";
 
 const VERSION = 'v1';
-const CALL_TIMEOUT = 30*1000 ;
+const CALL_TIMEOUT = 60*1000 ;
 
 var fs = require('fs');
 
@@ -26,7 +26,8 @@ exports.init = function(_globals,clientFactory){
 				var plugin_names = ['admin'] ;
 
 				files.filter(dirname => {
-					return fs.lstatSync(PLUGINS_FOLDER + dirname).isDirectory();
+					var fo = fs.lstatSync(PLUGINS_FOLDER + dirname) ;
+					return fo.isDirectory() || fo.isSymbolicLink();
 				}).forEach(dirname => {
 					if( dirname == 'admin') return ;
 					plugin_names.push(dirname) ;
@@ -47,14 +48,14 @@ exports.init = function(_globals,clientFactory){
 					exportmethods.localStorage = pc.localStorage ;
 					exportmethods.localSettings = pc.localSettings ;
 
-					if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
+					/*if( plugin_name === 'admin' ){	// Admin plugin can work also as a client.
 						var ci = clientFactory() ;
 						['callproc','subscribe','unsubscribe','unsubscribeall'].forEach(mname=>{
 							exportmethods[mname] = function(){
 								return ci[mname].apply(ci,arguments);
 							} ;
 						});
-					}
+					}*/
 					try {
 						var pobj = require('./plugins/' + plugin_name + '/index.js') ;
 						// Plugin init must return procedure call callback function.

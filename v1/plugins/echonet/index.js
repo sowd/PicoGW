@@ -244,7 +244,7 @@ exports.init = function(pi /*,globals*/){
 					}
 
 					if( bEdtUpdated && seoj!='0ef0' /*nodeprofile does not publish*/){
-						pluginInterface.publish(mm.eoj_id_map[els.SEOJ] , epcType
+						pluginInterface.publish(mm.eoj_id_map[els.SEOJ] +'/'+epcType
 							, {epc:parseInt('0x'+epc),edt:edt
 							, value:(edtConvFunc==undefined?undefined:edtConvFunc(edt))} ) ;
 					}
@@ -428,7 +428,7 @@ function onProcCall( method , _devid , propname , args ){
 	case 'SET' :
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
-				onProcCall_Put( method , devid , propname , args )
+				Promise.all([onProcCall_Put( method , devid , propname , args )])
 					.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
@@ -606,7 +606,7 @@ function onProcCall_Put( method , devid , propname , args ){
 		else return {error:'Unknown property name:'+propname} ;
 	}
 
-	if( epcs[epc_hex].edtConvFuncs != undefined )
+	if( epcs[epc_hex] != undefined && epcs[epc_hex].edtConvFuncs != undefined )
 		edtConvFunc = epcs[epc_hex].edtConvFuncs[1] ;
 	else if( eoj != '0ef0' ){
 		var epco = ELDB['0000'].epcs[epc_hex] ;

@@ -66,10 +66,11 @@ exports.PluginInterface = class {
 	    } ;
 	}
 
-	publish (devid, topicname, args) {
+	publish ( /*devid,*/ topicname, args) {
 		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
 		var re = {method:'PUB'} ;
-		var path = `/${globals.VERSION}/${this.prefix}/${devid}/${topicname}` ;
+		var path = `/${globals.VERSION}/${this.prefix}/${topicname}` ;
+		//var path = `/${globals.VERSION}/${this.prefix}/${devid}/${topicname}` ;
 		re[path] = args ;
 		globals.PubSub.pub(path,re /*{method:'PUB',path:path,args:args}*/) ;
 	}

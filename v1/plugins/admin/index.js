@@ -2,15 +2,15 @@
 
 var VERSION = 'v1';
 
-var adminInterface ;
+var pluginInterface ;
 var log = console.log ;
 
 var ipv4 = require('./ipv4.js');
-var logger = require('./logger.js');
 
-exports.init = function(ai){
-	adminInterface = ai ;
-	log = adminInterface.log ;
+
+exports.init = function(pi){
+	pluginInterface = pi ;
+	log = pluginInterface.log ;
 	
 	ipv4.setNetCallbackFunctions(
 		function(newid,newip){
@@ -35,7 +35,7 @@ exports.init = function(ai){
 		}
 	) ;
 
-	logger.start(adminInterface) ;
+	//logger.start(pluginInterface) ;
 	// log(JSON.stringify(logger.schedule)) ;
 	
 	// Plugin must return (possibly in promise) procedure call callback function.
@@ -76,13 +76,13 @@ function onProcCall( method , devid , propname , args ){
 
 function onProcCall_Get( method , serviceid , propname , args ){
 	if( serviceid == undefined ){	// access 'admin/' => service list
-		var re = { log:{schedule:JSON.parse(JSON.stringify(logger.schedule))} , net:{} } ;
+		var re = { net:{} } ;
 		var macs = ipv4.getmacs() ;
 		for( var mac in macs )
 			re.net[mac] = macs[mac].active ;
 
 		if( args.option === 'true' ){
-			re.log.option={leaf:false,doc:{short:'Scheduled logging function'}} ;
+			//re.log.option={leaf:false,doc:{short:'Scheduled logging function'}} ;
 			re.net.option={leaf:false,doc:{short:'Mac address of recognized network peers'}} ;
 		}
 		return re ;
@@ -91,18 +91,6 @@ function onProcCall_Get( method , serviceid , propname , args ){
 	if( propname == undefined ){	// access 'admin/serviceid/' => property list
 		var ret ;
 		switch(serviceid){
-			case 'log' :
-				ret = {} ;
-				logger.schedule.forEach(sentry=>{
-					ret[sentry.name] = JSON.parse(JSON.stringify(sentry)) ;
-					if( args.option === 'true' ){
-						ret[sentry.name].option = {
-							leaf:true
-							,doc:{short:sentry.description}
-						} ;
-					}
-				}) ;
-				return ret ;
 			case 'net' :
 				var macs = ipv4.getmacs() ;
 				//log(JSON.stringify(macs)) ;
@@ -127,11 +115,6 @@ function onProcCall_Get( method , serviceid , propname , args ){
 	}
 
 	switch(serviceid){
-		case 'log' :
-			var sentry = logger.schedule.filter(sentry=>sentry.name==propname) ;
-			if( sentry.length==0 )
-				return {error:'No such schedule name:'+propname} ;
-			return logger.getlog( sentry[0].path ) ;
 		case 'net' :
 			var m = ipv4.getmacs()[propname] ;
 			if( m == undefined )
