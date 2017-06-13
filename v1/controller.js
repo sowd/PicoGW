@@ -1,7 +1,7 @@
 "use strict";
 
 const VERSION = 'v1';
-const CALL_TIMEOUT = 60*1000 ;
+const CALL_TIMEOUT = 30*1000 ;
 
 var fs = require('fs');
 
