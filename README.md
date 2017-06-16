@@ -1,4 +1,4 @@
-![PicoGW logo](client/default/htdocs/res/PicoGW.png)
+![PicoGW logo](clients/web/default/htdocs/res/PicoGW.png)
 
 A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports ECHONET Lite. The license is MIT.
 The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
