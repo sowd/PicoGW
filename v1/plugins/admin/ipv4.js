@@ -14,7 +14,8 @@ const COMPLETE_IP_SCAN = false ;
 
 const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_TIMEOUT_IN_SEC*1000 ;
 
-var arped = require('arped');
+const __ = require('underscore')
+const arp = require('arp-a');
 var ping = require('ping');
 
 var ipmask = require('ipmask') ;
@@ -80,31 +81,26 @@ exports.getmacs = ()=>macs ;
 var macs = {} ;
 macs[mynetinfo.mac] = {active:true, localhost:true, log: [ {ip:mynetinfo.address,timestamp:Date.now()} ]} ;
 
-var arptxt = '' ;
+let prevarp = {} ;
 function chkArpTable(){
- 	var newtxt = arped.table().trim() ;
+	const newarp = {} ;
+	arp.table((err, entry) => {
+		if( err || !entry ) return ;
+		newarp[entry.mac] = entry.ip ;
+	});
 
-	if( arptxt == newtxt){
+	if( __.isEqual(prevarp, newarp) ){
 		// Register all known ips again for ping.
 		for( mac in macs )
 			ping_ips[macs[mac].log[0].ip] = mac ;
 		return ;
 	}
-
-	// arp table is changed (only flags can change, which is not reflected to parsed object)
-	//console.log('Old table:'+arptxt) ;
-	//console.log('New table:'+newtxt) ;
-
-	arptxt = newtxt ;
-	var newobj = arped.parse(arptxt) ;
-	//console.log('New table object:'+JSON.stringify(newobj)) ;
+	prevarp = newarp ;
 
 	// Register new mac address and corresponding IP
-	var net,mac,peer ;
-	for( net in newobj.Devices ) for( mac in newobj.Devices[net].MACs ){
+	for( const mac in newarp ){
+		newip = newarp[mac] ;
 		if( mac === '00:00:00:00:00:00' ) continue ;
-		// console.log('Mac:'+mac) ;
-		var newip = newobj.Devices[net].MACs[mac].trim() ;
 		if( macs[mac] == undefined ){
 			// New mac address found (active=true because newly-found host is probably active)
 			macs[mac] = { active:true , log: [ {ip:newip,timestamp:Date.now()} ] };
