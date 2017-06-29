@@ -45,3 +45,6 @@ VERSIONS.forEach(VERSION=>{
 }) ;
 
 console.log('PicoGW started.') ;
+
+// Omit shell disconnection at Starbucks
+setInterval(()=>{log(Date.now());},10000) ;
