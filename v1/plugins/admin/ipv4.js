@@ -7,7 +7,8 @@
 // Todo: what happens if myself is disconnected?
 
 const CHECK_ARP_TABLE_INTERVAL = 2000 ;
-const PING_INTERVAL = 10*1000 /*Alive check*/, PING_TIMEOUT_IN_SEC = 10 ;
+/*Ping for alive check*/
+const PING_INTERVAL = 10*1000 , PING_RANDOM_RANGE = 2*1000 , PING_TIMEOUT_IN_SEC = 7 ;
 const COMPLETE_IP_SCAN = false ;
 
 
@@ -178,10 +179,6 @@ function ping_all(){
 		}
 	}
 
-	var ipnum=0 ;
-	for( var _ip in ping_ips_copy ){++ipnum;}
-	var delay = 0 ;
-
 	for( var _ip in ping_ips_copy ){
 		(function(){
 			var ip = _ip ;
@@ -204,12 +201,11 @@ function ping_all(){
 						macs[mac].active = isActive ;
 					}
 				}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
-			},delay) ;
+			}, parseInt(PING_RANDOM_RANGE * Math.random())) ;
 		})();
-		delay += PING_INTERVAL ;
 	}
 
-	setTimeout(ping_all,delay) ;
+	setTimeout(ping_all,PING_INTERVAL) ;
 }
 
 setInterval(chkArpTable,CHECK_ARP_TABLE_INTERVAL) ;
