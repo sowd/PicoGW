@@ -79,58 +79,63 @@ exports.getmacs = ()=>macs ;
 //  Check arp table and update macs
 var macs = {} ;
 macs[mynetinfo.mac] = {active:true, localhost:true, log: [ {ip:mynetinfo.address,timestamp:Date.now()} ]} ;
-
+var d = 0 ;
 var arptxt = '' ;
 function chkArpTable(){
- 	var newtxt = arped.table().trim() ;
+	try {
+	 	var newtxt = arped.table().trim() ;
 
-	if( arptxt == newtxt){
-		// Register all known ips again for ping.
-		for( mac in macs )
-			ping_ips[macs[mac].log[0].ip] = mac ;
-		return ;
-	}
+		if( arptxt == newtxt){
+			// Register all known ips again for ping.
+			for( mac in macs )
+				ping_ips[macs[mac].log[0].ip] = mac ;
+			return ;
+		}
 
-	// arp table is changed (only flags can change, which is not reflected to parsed object)
-	//console.log('Old table:'+arptxt) ;
-	//console.log('New table:'+newtxt) ;
+		// arp table is changed (only flags can change, which is not reflected to parsed object)
+		//console.log('Old table:'+arptxt) ;
+		//console.log('New table:'+newtxt) ;
 
-	arptxt = newtxt ;
-	var newobj = arped.parse(arptxt) ;
-	//console.log('New table object:'+JSON.stringify(newobj)) ;
+		arptxt = newtxt ;
+		var newobj = arped.parse(arptxt) ;
+		//console.log('New table object:'+JSON.stringify(newobj)) ;
 
-	// Register new mac address and corresponding IP
-	var net,mac,peer ;
-	for( net in newobj.Devices ) for( mac in newobj.Devices[net].MACs ){
-		if( mac === '00:00:00:00:00:00' ) continue ;
-		// console.log('Mac:'+mac) ;
-		var newip = newobj.Devices[net].MACs[mac].trim() ;
-		if( macs[mac] == undefined ){
-			// New mac address found (active=true because newly-found host is probably active)
-			macs[mac] = { active:true , log: [ {ip:newip,timestamp:Date.now()} ] };
-			console.log( mac+'/'+newip+' newly found.' ) ;
-			onNewIDFoundCallback( mac , newip ) ;
-		} else {
-			// Existing mac address re-found
-			peer = macs[mac] ;
-			var curip = peer.log[0].ip ;
-			if( curip != newip ){
-				// IP address changed
-				peer.log.unshift({ip:newip,timestamp:Date.now()}) ;
-				console.log( mac+' changed IP address from '+curip+' to '+newip ) ;
-				onIPAddressChangedCallback( mac , curip , newip ) ;
+		// Register new mac address and corresponding IP
+		var net,mac,peer ;
+		for( net in newobj.Devices ) for( mac in newobj.Devices[net].MACs ){
+			if( mac === '00:00:00:00:00:00' ) continue ;
+			// console.log('Mac:'+mac) ;
+			var newip = newobj.Devices[net].MACs[mac].trim() ;
+			if( macs[mac] == undefined ){
+				// New mac address found (active=true because newly-found host is probably active)
+				macs[mac] = { active:true , log: [ {ip:newip,timestamp:Date.now()} ] };
+				console.log( mac+'/'+newip+' newly found.' ) ;
+				onNewIDFoundCallback( mac , newip ) ;
+			} else {
+				// Existing mac address re-found
+				peer = macs[mac] ;
+				var curip = peer.log[0].ip ;
+				if( curip != newip ){
+					// IP address changed
+					peer.log.unshift({ip:newip,timestamp:Date.now()}) ;
+					console.log( mac+' changed IP address from '+curip+' to '+newip ) ;
+					onIPAddressChangedCallback( mac , curip , newip ) ;
+				}
+			}
+
+			if( onIPMacFoundCallback[newip] != undefined ){
+				onIPMacFoundCallback[newip].forEach(cb=>cb(mac)) ;
+				delete onIPMacFoundCallback[newip] ;
 			}
 		}
 
-		if( onIPMacFoundCallback[newip] != undefined ){
-			onIPMacFoundCallback[newip].forEach(cb=>cb(mac)) ;
-			delete onIPMacFoundCallback[newip] ;
-		}
+		// Register all known ips for ping.
+		for( mac in macs )
+			ping_ips[macs[mac].log[0].ip] = mac ;
+	} catch(e){
+		console.error('Error in reading arp table:') ;
+		console.error(e) ;
 	}
-
-	// Register all known ips for ping.
-	for( mac in macs )
-		ping_ips[macs[mac].log[0].ip] = mac ;
 } ;
 
 
