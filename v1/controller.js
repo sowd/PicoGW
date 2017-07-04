@@ -39,7 +39,7 @@ exports.init = function(_globals,clientFactory){
 						{VERSION:VERSION,admin:admin,PubSub:globals.PubSub}
 						,plugin_name) ;
 					var exportmethods = {} ;
-					[ 'publish','log','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema','getSettings','getpath','getprefix']
+					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema','getSettings','getpath','getprefix']
 						.forEach(methodname => {
 						exportmethods[methodname] = function(){
 							return pc[methodname].apply(pc,arguments);
@@ -103,6 +103,18 @@ exports.callproc = function(params){
 			}
 			var terms = procedure.split('/') ;
 			var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms[2] ;
+
+			// Update settings.json
+			if( method === 'POST' && Plugins[pprefix] != undefined
+				&& pdevid === 'settings'
+				&& (ppropname == undefined || ppropname == '') ){
+				fs.writeFile( Plugins[pprefix].getpath()+'settings.json'
+					, JSON.stringify(args,null,"\t") , function(){
+						Plugins[pprefix].onSettingsUpdated(args) ;
+						ac({success:true,message:'settings.json was successfully updated.'}) ;
+					} ) ;
+				return ;
+			}
 
 
 			if( pdevid != undefined && pdevid.length==0 )		pdevid = undefined ;

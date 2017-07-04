@@ -64,6 +64,7 @@ exports.PluginInterface = class {
     			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
 	    	}
 	    } ;
+	    this.onSettingsUpdated = function(newsettings){} ;
 	}
 
 	publish ( /*devid,*/ topicname, args) {
@@ -100,6 +101,9 @@ exports.PluginInterface = class {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
    		} catch(e){}
 	}
+	// handlerName = 'SettingsUpdated', etc...
+	on(handlerName,handler_body){ this['on'+handlerName] = handler_body ; }
+	off(handlerName){ delete this['on'+handlerName] ; this['on'+handlerName] = undefined ;}
 	// Get plugin home dir
 	getpath (){
 		return `${globals.VERSION}/plugins/${this.prefix}/`;
