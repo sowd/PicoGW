@@ -1,0 +1,23 @@
+{
+	"title": "Admin Settings"
+	,"type": "object"
+	,"required":["type"]
+	,"properties": {
+			"type": {
+				"type": "string"
+				,"enum": ["DHCP","Static"]
+			}
+			,"ip": {
+				"title": "IP"
+			    ,"type": "string"
+			}
+			,"netmask": {
+				"title": "Netmask"
+				,"type": "string"
+			}
+			,"default_gateway": {
+			   	"title": "Default Gateway"
+				,"type": "string"
+			}
+	}
+}
