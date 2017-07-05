@@ -2,6 +2,8 @@
 localstorage.json
 v1/plugins/log
 clients/web/custom
+v1/plugins/admin/settings.json
+
 
 # Logs
 logs
