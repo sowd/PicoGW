@@ -6,7 +6,7 @@
 
 // Todo: what happens if myself is disconnected?
 
-const CHECK_ARP_TABLE_INTERVAL = 2000 ;
+const CHECK_ARP_TABLE_INTERVAL = 60*1000 ;
 /*Ping for alive check*/
 const PING_INTERVAL = 10*1000 , PING_RANDOM_RANGE = 2*1000 , PING_TIMEOUT_IN_SEC = 7 ;
 const COMPLETE_IP_SCAN = false ;
@@ -26,14 +26,25 @@ console.log('Network info:'+JSON.stringify(mynetinfo)) ;
 var onIPMacFoundCallback = {} ;
 exports.getNetIDFromIPv4Address = function(ip){
 	return new Promise((ac,rj)=>{
-		for( var mac in macs){
-			if( macs[mac].log[0].ip === ip ){
-				ac(mac) ;
-				return ;
-			}
-		}
+		chkArpTable() ;
 		if( ip == mynetinfo.address ){
 			ac(mynetinfo.mac) ;
+			return ;
+		}
+		var candidate ;
+		// Prioritize active macs.
+		for( var mac in macs){
+			if( macs[mac].log[0].ip === ip ){
+				if( macs[mac].active ){
+					ac(mac) ;
+					return ;
+				}
+				candidate = mac ;
+			}
+		}
+		// return inactive mac
+		if( candidate != undefined ){
+			ac( candidate ) ;
 			return ;
 		}
 		// Not found.
@@ -81,8 +92,21 @@ exports.getmacs = ()=>macs ;
 var macs = {} ;
 macs[mynetinfo.mac] = {active:true, localhost:true, log: [ {ip:mynetinfo.address,timestamp:Date.now()} ]} ;
 var d = 0 ;
+function deactivatemacbyip(ip){
+	var prev_actives = [] ;
+	for( let mac in macs ){
+		if( macs[mac].log[0].ip == ip ){
+			if( macs[mac].active )
+				prev_actives.push(mac) ;
+			macs[mac].active = false ;
+		}
+	}
+	return prev_actives ;
+}
+
 var arptxt = '' ;
 function chkArpTable(){
+	// console.log('Checking arp table..') ;
 	try {
 	 	var newtxt = arped.table().trim() ;
 
@@ -90,6 +114,7 @@ function chkArpTable(){
 			// Register all known ips again for ping.
 			for( mac in macs )
 				ping_ips[macs[mac].log[0].ip] = mac ;
+			//console.log('Not updated.') ;
 			return ;
 		}
 
@@ -99,7 +124,7 @@ function chkArpTable(){
 
 		arptxt = newtxt ;
 		var newobj = arped.parse(arptxt) ;
-		//console.log('New table object:'+JSON.stringify(newobj)) ;
+		//console.log('New table object:'+JSON.stringify(newobj,null,"\t")) ;
 
 		// Register new mac address and corresponding IP
 		var net,mac,peer ;
@@ -107,6 +132,7 @@ function chkArpTable(){
 			if( mac === '00:00:00:00:00:00' ) continue ;
 			// console.log('Mac:'+mac) ;
 			var newip = newobj.Devices[net].MACs[mac].trim() ;
+			prev_actives = deactivatemacbyip(newip) ;
 			if( macs[mac] == undefined ){
 				// New mac address found (active=true because newly-found host is probably active)
 				macs[mac] = { active:true , log: [ {ip:newip,timestamp:Date.now()} ] };
@@ -115,14 +141,25 @@ function chkArpTable(){
 			} else {
 				// Existing mac address re-found
 				peer = macs[mac] ;
+				peer.active = true ;
 				var curip = peer.log[0].ip ;
 				if( curip != newip ){
 					// IP address changed
 					peer.log.unshift({ip:newip,timestamp:Date.now()}) ;
 					console.log( mac+' changed IP address from '+curip+' to '+newip ) ;
 					onIPAddressChangedCallback( mac , curip , newip ) ;
+				} else if( prev_actives.indexOf(mac) == -1 ){ // Re-found
+					console.log(mac+'/'+curip+' re-appeared') ;
+					onIPAddressRecoveredCallback( mac , curip ) ;
+				} else { //  already active.
+					prev_actives.splice(prev_actives.indexOf(mac),1) ;
 				}
 			}
+
+			prev_actives.forEach(deactivated_mac=>{
+				onIPAddressLostCallback( deactivated_mac , curip ) ;
+				console.log(deactivated_mac+'/'+curip+' disappeared') ;
+			}) ;
 
 			if( onIPMacFoundCallback[newip] != undefined ){
 				onIPMacFoundCallback[newip].forEach(cb=>cb(mac)) ;
@@ -137,6 +174,7 @@ function chkArpTable(){
 		console.error('Error in reading arp table:') ;
 		console.error(e) ;
 	}
+	//console.log('Updated.') ;
 } ;
 
 
@@ -179,30 +217,11 @@ function ping_all(){
 		}
 	}
 
-	for( var _ip in ping_ips_copy ){
-		(function(){
-			var ip = _ip ;
-			var mac = ping_ips_copy[ip] ;
-			setTimeout(()=>{
-				//console.log('Pinging to '+ip+'...') ;
-				ping.sys.probe(ip, function(isActive){
-					//console.log('Ping reply from '+ip+' : '+(isActive?'active':'inactive')) ;
-					if( mac == null					// ping only
-					 || ip != macs[mac].log[0].ip	// ip address updated by arp table. the old ip can address different mac
-					) return ;
-					if( macs[mac].active != isActive ){
-						if( isActive ){
-							console.log(mac+'/'+ip+' appeared') ;
-							onIPAddressRecoveredCallback( mac , ip ) ;
-						} else {
-							console.log(mac+'/'+ip+' disappeared') ;
-							onIPAddressLostCallback( mac , ip ) ;
-						}
-						macs[mac].active = isActive ;
-					}
-				}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
-			}, parseInt(PING_RANDOM_RANGE * Math.random())) ;
-		})();
+	for( let ip in ping_ips_copy ){
+		setTimeout(()=>{
+			//console.log('Pinging to '+ip+'...') ;
+			ping.sys.probe(ip, function(isActive){}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
+		}, parseInt(PING_RANDOM_RANGE * Math.random())) ;
 	}
 
 	setTimeout(ping_all,PING_INTERVAL) ;
