@@ -91,19 +91,54 @@ exports.init = function(_clientInterface,_globals){
 	    	return ;
 	    }
 
-	    log((new Date()) + ' Connection accepted.');
+	    //log((new Date()) + ' Connection accepted.');
+	    let subscribe_funcs = {} ;
 	    connection.on('message', function(message) {
 	        if (message.type === 'utf8') {
-	            log('Received Message: ' + message.utf8Data);
-	            connection.sendUTF(message.utf8Data);
+				//log('Received Message: ' + message.utf8Data);
+				let req ;
+	        	try {
+	        		req = JSON.parse(message.utf8Data) ;
+	        		if( req.method.toUpperCase() == 'SUB' ){
+	        			let cbfunc = function(re){
+							connection.sendUTF(JSON.stringify(re)) ;
+						} ;
+						if( subscribe_funcs[req.path] == undefined ){
+							clientInterface.subscribe(req.path,cbfunc) ;
+							subscribe_funcs[req.path] = cbfunc ;
+						}
+						connection.sendUTF(JSON.stringify({success:true,tid:req.tid}));
+	        		} else if( req.method.toUpperCase() == 'UNSUB' ){
+	        			if( subscribe_funcs[req.path] != undefined ){
+							clientInterface.unsubscribe(req.path,subscribe_funcs[req.path]) ;
+							delete subscribe_funcs[req.path] ;
+						}
+						connection.sendUTF(JSON.stringify({success:true,tid:req.tid}));
+	        		} else {
+	        			clientInterface.callproc(req).then(re=>{
+							re.tid = req.tid ;
+							connection.sendUTF(JSON.stringify(re)+"\n") ;
+						}).catch(e=>{
+							e.tid = req.tid ;
+							connection.sendUTF(JSON.stringify(e)+"\n") ;
+						}) ;
+	        		}
+		        } catch(e){
+		        	log('Error in receiving websocket message') ;
+		        	log(JSON.stringify(e)) ;
+		        }
 	        }
 	        else if (message.type === 'binary') {
-	            log('Received Binary Message of ' + message.binaryData.length + ' bytes');
-	            connection.sendBytes(message.binaryData);
+	            log('Received Binary Message of ' + message.binaryData.length + ' bytes. Ignore.');
+	            //connection.sendBytes(message.binaryData);
 	        }
 	    });
 	    connection.on('close', function(reasonCode, description) {
-	        log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+	        //log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
+	        for( let path in subscribe_funcs ){
+		        clientInterface.unsubscribe(path,subscribe_funcs[path]) ;
+		    }
+		    subscribe_funcs = {} ;
 	    });
 	});
 

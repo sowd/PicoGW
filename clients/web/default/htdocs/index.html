@@ -45,7 +45,9 @@ The external libraries used and their licenses are listed in <a href='https://gi
 <script src='js/jstree.min.js'></script>
 <script src='js/jsoneditor.min.js'></script>
 <script src='js/marked.min.js'></script>
+<script src='websock.js'></script>
 <script>
+
 const API_PREFIX = '/v1' ;
 var log = console.log ;
 var res_tree = $('#resource_tree') ;
@@ -55,54 +57,62 @@ var node_properties = {'.':{isleaf:false, settings_schema:undefined, settings:un
 function t_open(path){
 	return new Promise( (ac,rj)=>{
 		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
-		$.ajax({
-			type: 'GET'
-			,url: API_PREFIX+path_real+'?option=true'
-			,dataType: 'json'
-			,success: function(json){
-				var id_to_longdoc = {} ;
-				for( var dk in json ){
-					var next_path_id = path+dk+'.' ;
-					var txt = dk;//`${path_real}${dk}` ;
 
-					node_properties[next_path_id] = {isleaf:true, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/} ;
+		if( picogw == undefined ){
+			alert('Not connected to the gateway.') ;
+			return ;
+		}
+		picogw.callproc({
+			method:'GET'
+			,path:API_PREFIX+path_real
+			,args:{option:'true'}
+		}).then(function(json){
+			var id_to_longdoc = {} ;
+			for( var dk in json ){
+				var next_path_id = path+dk+'.' ;
+				var txt = dk;//`${path_real}${dk}` ;
 
-					var longdoc ;
-					try {
-						var opt = json[dk].option ;
-						node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
-						if( opt.doc.short != undefined ) txt += ' (' + opt.doc.short +')' ;
-						longdoc = opt.doc.long ;
-						/*if( longdoc != undefined)
-							node_properties[next_path_id].longdoc = longdoc ;*/
-						if( node_properties[next_path_id].settings_schema = opt.settings_schema )
-							txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
-						node_properties[next_path_id].settings = opt.settings ;
+				node_properties[next_path_id] = {isleaf:true, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/} ;
 
-					} catch(e){}
+				var longdoc ;
+				try {
+					var opt = json[dk].option ;
+					node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
+					if( opt.doc.short != undefined ) txt += ' (' + opt.doc.short +')' ;
+					longdoc = opt.doc.long ;
+					/*if( longdoc != undefined)
+						node_properties[next_path_id].longdoc = longdoc ;*/
+					if( node_properties[next_path_id].settings_schema = opt.settings_schema )
+						txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
+					node_properties[next_path_id].settings = opt.settings ;
 
-					res_tree.jstree(
-						'create_node', '#'+path
-						,{ id : next_path_id , text : txt
-						, type : (node_properties[next_path_id].isleaf?'file':'folder')});
+				} catch(e){}
 
-					if( longdoc )
-						id_to_longdoc[next_path_id]=longdoc ;
-				}
-				res_tree.jstree('open_node', '#'+path);
+				res_tree.jstree(
+					'create_node', '#'+path
+					,{ id : next_path_id , text : txt
+					, type : (node_properties[next_path_id].isleaf?'file':'folder')});
 
-				for( var path_id in id_to_longdoc)
-					document.getElementById(path_id).setAttribute('title',id_to_longdoc[path_id]) ;
-				$( document ).tooltip();
+				if( longdoc )
+					id_to_longdoc[next_path_id]=longdoc ;
 			}
-			,error: ()=>{
-				alert('API call failed:'+path) ;
-			}
+			res_tree.jstree('open_node', '#'+path);
+
+			for( var path_id in id_to_longdoc)
+				document.getElementById(path_id).setAttribute('title',id_to_longdoc[path_id]) ;
+			$( document ).tooltip();
+		}).catch(e=>{
+			alert('API call failed:'+path) ;
+			console.error(e) ;
 		});
 	}) ;
 }
 
 onload = function(){
+	connectws(()=>{
+		console.log('Connected to the gateway.') ;
+	}) ;
+
 	$( "#tabs" ).tabs();	// Stylize by jquery ui
 	// When selected
 	res_tree.on('changed.jstree', function (e, data) {
@@ -142,14 +152,22 @@ onload = function(){
         	items:node=>{
         		var menu = {} ;
         		if( node_properties[node.id].settings_schema != undefined ){
-        			menu.Settings = {label:'Settings',action:obj=>{
-	        			// Reload schema and current value
-	        			$.ajax({
-	        				url:API_PREFIX+node.id.split('.').slice(0,-2).join('/')+'/?option=true'
-	        				,type:'GET',dataType:'json',success:json=>{
-	        					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
-	        					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
-	        					node_properties[node.id].settings = new_node_prop.option.settings ;
+	        			menu.Settings = {label:'Settings',action:obj=>{
+
+							if( picogw == undefined ){
+								alert('Not connected to the gateway.') ;
+								return ;
+							}
+							picogw.callproc({
+								method:'GET'
+								,path:API_PREFIX+node.id.split('.').slice(0,-2).join('/')
+								,args:{option:'true'}
+							}).then(function(json){
+
+		        			// Reload schema and current value
+	    					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
+	    					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
+	    					node_properties[node.id].settings = new_node_prop.option.settings ;
 
 
 	        				var settings_schema = node_properties[node.id].settings_schema ;
@@ -194,8 +212,7 @@ onload = function(){
 									,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
 								}
 							}) ;
-	        			}}) ;
-
+	        			}) ;
         			}} ;
         		}
 
@@ -206,7 +223,7 @@ onload = function(){
 							alert('No document available.') ;
 					}} ;*/
 
-				menu.OpenAPI = {label:'Open API',	action:obj=>{
+				menu.OpenAPI = {label:'Open API',action:obj=>{
 					var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
 					window.open(API_PREFIX+path_real,'_blank') ;
 				}} ;
@@ -242,20 +259,6 @@ onload = function(){
 		,error: err=>{ alert('README file cannot be loaded.') ; }
 	});
 
-
-    /*var connection = new WebSocket('ws://192.168.126.103:8080/v1' ,['picogw']);
-	connection.onopen = function () {
-  		connection.send('Ping'); // Send the message 'Ping' to the server
-	};
-
-	$.ajax({
-		type: "PUT",
-		url: "http://192.168.126.104:8080/v1/echonet/AirConditioner_1/OperatingState?30",
-		success: function(msg){
-			alert( JSON.stringify(msg) );
-		}
-	});
-	*/
 } ;
 
 
