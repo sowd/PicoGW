@@ -151,7 +151,10 @@ exports.init = function(pi /*,globals*/){
 			try {
 				const seoj = els.SEOJ.substring(0,4) ;
 				var epcList = EL.parseDetail( els.OPC, els.DETAIL );
-
+				if(ELDB[seoj] == undefined) {
+					log(`A message from unknown EOJ ${seoj} on ${ip} is ignored.`);
+					return ;
+				}
 				if( macs[mac] == undefined ){
 					macs[mac] = {ip:ip,active:true,nodeprofile:{},devices:{},eoj_id_map:{}} ;
 				} else {
@@ -171,6 +174,9 @@ exports.init = function(pi /*,globals*/){
 							EL.getPropertyMaps( ip, EL.toHexArray(eoj) );
 							//log('Predefined device '+mm.eoj_id_map[els.SEOJ]+' replied') ;
 						}
+					} else if(ELDB[eoj.slice(0,4)] == undefined) {
+						log(`EOJ ${eoj} on ${ip} is not found in ECHONET Lite DB.`);
+						return ;
 					} else {
 						var devid = ELDB[eoj.slice(0,4)].objectType ;
 						if( devid == undefined ) return ;
