@@ -228,8 +228,13 @@ Then a value change is asynchronously notified by a PUB JSON object.
 [mime](https://www.npmjs.com/package/mime)  
 [opts](https://www.npmjs.com/package/opts)  
 [ping](https://www.npmjs.com/package/ping)  
+[sudo](https://www.npmjs.com/package/sudo)  
 
 #### Apache 2
 
 **npm**  
 [websocket](https://www.npmjs.com/package/websocket)  
+
+#### No license
+
+[cryptico](https://www.npmjs.com/package/cryptico)  
