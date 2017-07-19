@@ -109,6 +109,7 @@ exports.callproc = function(params){
 			if( method === 'POST' && Plugins[pprefix] != undefined
 				&& pdevid === 'settings'
 				&& (ppropname == undefined || ppropname == '') ){
+
 				fs.writeFile( Plugins[pprefix].getpath()+'settings.json'
 					, JSON.stringify(args,null,"\t") , function(){
 						Plugins[pprefix].onSettingsUpdated(args) ;

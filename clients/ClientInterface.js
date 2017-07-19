@@ -18,6 +18,9 @@ exports.ClientInterface = class {
 		if( globals.VERSION_CTRLS[pathsplit[1]] == undefined )
             return Promise.reject({error:`No such version: ${pathsplit[1]}`}) ;
 
+        if( params.args != undefined && typeof params.args.encrypted == 'string' )
+        	params.args = JSON.parse(globals.decrypt(params.args.encrypted)) ;
+
 		return globals.VERSION_CTRLS[pathsplit[1]].callproc({
 			method:params.method
 			,path:params.path.slice( `/${pathsplit[1]}/`.length )

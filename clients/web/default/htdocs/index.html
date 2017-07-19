@@ -45,6 +45,7 @@ The external libraries used and their licenses are listed in <a href='https://gi
 <script src='js/jstree.min.js'></script>
 <script src='js/jsoneditor.min.js'></script>
 <script src='js/marked.min.js'></script>
+<script src='js/cryptico.min.js'></script>
 <script src='websock.js'></script>
 <script>
 
@@ -52,6 +53,8 @@ const API_PREFIX = '/v1' ;
 var log = console.log ;
 var res_tree = $('#resource_tree') ;
 var node_properties = {'.':{isleaf:false, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/}} ;
+
+const RSA_PUB_KEY = __%%RSA_PUB_KEY%%__ ;
 
 /// Tree activities
 function t_open(path){
@@ -188,6 +191,7 @@ onload = function(){
 	        					editor.setValue(settings) ;
 
 	        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
+
 							$('#settings_dialog').dialog({
 								modal: true
 								, width: '90%'
@@ -195,16 +199,16 @@ onload = function(){
 								, buttons: {
 									Apply: function(){
 										var path = node.id.split('.').join('/') ;
-										$.ajax({
-											type: 'POST'
-											,url: API_PREFIX+path+'settings' /*?value='
-												+encodeURIComponent(JSON.stringify(editor.getValue()))*/
-											,dataType: 'json'
-											,data: editor.getValue()
-											,success: json=>{
-												if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
-											}
-											,error: json=>{ alert('API call failed:'+path) ; }
+
+										picogw.callproc({
+											method:'POST'
+											,path:API_PREFIX+path+'settings'
+											,args:{encrypted:cryptico.encrypt( JSON.stringify(editor.getValue()), RSA_PUB_KEY ).cipher}
+										}).then(function(json){
+											if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+										}).catch(e=>{
+											alert('API call failed:'+path) ; 
+											console.error(e) ;
 										});
 
 										cleanup() ;
