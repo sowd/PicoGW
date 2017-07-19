@@ -39,8 +39,9 @@ exports.init = function(_globals,clientFactory){
 						{VERSION:VERSION,admin:admin,PubSub:globals.PubSub}
 						,plugin_name) ;
 					var exportmethods = {} ;
-					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema'
-						,'getSettings','getpath','getprefix']
+					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks'
+						,'getSettingsSchema','getSettings','setOnSettingsUpdatedCallback'
+						,'getpath','getprefix']
 						.forEach(methodname => {
 						exportmethods[methodname] = function(){
 							return pc[methodname].apply(pc,arguments);
@@ -110,11 +111,15 @@ exports.callproc = function(params){
 				&& pdevid === 'settings'
 				&& (ppropname == undefined || ppropname == '') ){
 
-				fs.writeFile( Plugins[pprefix].getpath()+'settings.json'
-					, JSON.stringify(args,null,"\t") , function(){
-						Plugins[pprefix].onSettingsUpdated(args) ;
-						ac({success:true,message:'settings.json was successfully updated.'}) ;
-					} ) ;
+				Promise.all([Plugins[pprefix].onSettingsUpdated(args)]).then(re=>{
+					fs.writeFile( Plugins[pprefix].getpath()+'settings.json'
+						, JSON.stringify(args,null,"\t") , function(err){
+							if( err ) rj({error:err}) ;
+							else ac({success:true,message:'settings.json was successfully updated.',result:re[0]}) ;
+						} ) ;
+				}).catch(e=>{
+					rj({error:e}) ;
+				}) ;
 				return ;
 			}
 

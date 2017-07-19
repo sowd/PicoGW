@@ -91,6 +91,7 @@ exports.PluginInterface = class {
 	setNetIDCallbacks (callbacks_obj) {
 		globals.admin.setNetIDCallbacks_Forward(this.prefix , callbacks_obj) ;
 	}
+
 	getSettingsSchema(){
    		try {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings_schema.json').toString()) ;
@@ -100,6 +101,9 @@ exports.PluginInterface = class {
    		try {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
    		} catch(e){}
+	}
+	setOnSettingsUpdatedCallback(callback){
+		this.onSettingsUpdated = callback ;
 	}
 	getPubKey(){ return globals.admin.getPubKey() ; }
 	encrypt(){ return globals.admin.getPubKey() ; }

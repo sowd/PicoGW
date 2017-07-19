@@ -19,5 +19,10 @@
 			   	"title": "Default Gateway"
 				,"type": "string"
 			}
+			,"root_passwd": {
+				"title": "Root password"
+				,"type": "string"
+				,"format":"password"
+			}
 	}
 }

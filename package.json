@@ -13,6 +13,7 @@
     "mime": "^1.3.4",
     "opts": "^1.2.6",
     "ping": "^0.2.2",
+    "sudo": "^1.0.3",
     "websocket": "^1.0.24"
   },
   "devDependencies": {},

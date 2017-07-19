@@ -3,6 +3,7 @@ let log = console.log ;
 let localStorage ;
 let ipv4 = require('./ipv4.js');
 let cryptico = require('cryptico');
+let sudo = require('sudo');
 const RSA_BITS = 1024 ;
 let rsaKey , pubKey ;
 
@@ -34,6 +35,19 @@ exports.init = function(pi){
 		}
 	) ;
 
+	pluginInterface.setOnSettingsUpdatedCallback( newSettings => {
+		return new Promise((ac,rj)=>{
+			rj('Not implemented yet.') ;
+			/*
+			var child = sudo(['cat','/etc/shadow'],{password:newSettings.root_passwd}) ;
+			delete newSettings.root_passwd ;
+			child.stdout.on('data', function (data) {
+				rj(data.toString()) ;
+			});
+			*/
+		}) ;
+	}) ;
+
 	// Plugin must return (possibly in promise) procedure call callback function.
 	// The signature is ( method , devid , propertyname , argument )
 	return onProcCall;
@@ -59,13 +73,13 @@ function onProcCall( method , devid , propname , args ){
 	switch(method){
 	case 'GET' :
 		return onProcCall_Get( method , devid , propname , args ) ;
-	case 'POST' :
+	/*case 'POST' :
 		if(devid!='settings' || args == undefined)
 			return {error:'The format is wrong for settings.'} ;
 		if( args.schedule instanceof Array && logger.updateschedule(args.schedule) )
 			return {success:true,message:'New schedule settings are successfully saved'} ;
 		else
-			return {error:'Error in saving scheduled logging'} ;
+			return {error:'Error in saving scheduled logging'} ;*/
 	}
 	return {error:`The specified method ${method} is not implemented in admin plugin.`} ;
 }
