@@ -1,6 +1,7 @@
 # PicoGW cache
 localstorage.json
 v1/plugins/log
+clients/.key
 clients/web/custom
 v1/plugins/admin/settings.json
 

@@ -1,5 +1,7 @@
 // clients/index.js
 var fs = require('fs');
+let cryptico = require('cryptico');
+const RSA_BITS = 1024 ;
 
 var ClientInterface = require('./ClientInterface.js').ClientInterface ;
 var globals ;
@@ -39,20 +41,45 @@ exports.init = function(_globals){
 	if( globals != undefined )
 		return Promise.reject('clients.init cannot be called multiple times.') ;
 	globals = _globals ;
-	return new Promise( (ac,rj)=>{
-		// Scan clients
-		try {
-			fs.readdir( './clients/', (err, files) => {
-				if (err){ rj('No clients found.'); return; }
 
-				Promise.all(
-					files.filter(dirname => {
-						return fs.lstatSync('./clients/' + dirname).isDirectory();
-					}).map(dirname=>{return exports.clientFactory(dirname);})
-				).then(ac).catch(rj) ;
-			}) ;
-		} catch(e){
-			rj('Error in initializing client(s).') ;
-		}
+	// Generate RSA key
+	return new Promise( (ac,rj)=>{
+		const KEY_PATH = './clients/.key' ;
+		fs.readFile(KEY_PATH,'utf8',(err,data)=>{
+			let passPhrase ;
+			if( err ){
+				const randStrSrc='abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+				passPhrase = '' ;
+				for( let i=0;i<100;++i ) passPhrase += randStrSrc[parseInt(Math.random()*randStrSrc.length)] ;
+				fs.writeFileSync(KEY_PATH,passPhrase) ;
+			} else passPhrase = data ;
+
+			log('Generating RSA key..') ;
+			let rsaKey = cryptico.generateRSAKey(passPhrase, RSA_BITS) ;
+			let pubKey = cryptico.publicKeyString(rsaKey) ;
+
+			log('RSA key generated.') ;
+
+			globals.getPubKey = ()=>pubKey ;
+			globals.encrypt = srcStr => cryptico.encrypt( srcStr, pubKey ).cipher;
+			globals.decrypt = srcStr => cryptico.decrypt( srcStr, rsaKey ).plaintext;
+
+			// Scan clients
+			try {
+				fs.readdir( './clients/', (err, files) => {
+					if (err){ rj('No clients found.'); return; }
+
+					Promise.all(
+						files.filter(dirname => {
+							return fs.lstatSync('./clients/' + dirname).isDirectory();
+						}).map(dirname=>{return exports.clientFactory(dirname);})
+					).then(ac).catch(rj) ;
+				}) ;
+			} catch(e){
+				rj('Error in initializing client(s).') ;
+			}
+
+		}) ;
+
 	} ) ;
 } ;

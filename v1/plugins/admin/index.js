@@ -1,31 +1,34 @@
-var pluginInterface ;
-var log = console.log ;
-
-var ipv4 = require('./ipv4.js');
-
+let pluginInterface ;
+let log = console.log ;
+let localStorage ;
+let ipv4 = require('./ipv4.js');
+let cryptico = require('cryptico');
+const RSA_BITS = 1024 ;
+let rsaKey , pubKey ;
 
 exports.init = function(pi){
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
+	localStorage = pluginInterface.localStorage ;
 	
 	ipv4.setNetCallbackFunctions(
 		function(newid,newip){
-			for( var plugin_name in netIDCallbacks )
+			for( let plugin_name in netIDCallbacks )
 				if( netIDCallbacks[plugin_name].onNewIDFoundCallback != undefined )
 					netIDCallbacks[plugin_name].onNewIDFoundCallback(newid,newip) ;
 		}
 		,function(id,lostip){
-			for( var plugin_name in netIDCallbacks )
+			for( let plugin_name in netIDCallbacks )
 				if( netIDCallbacks[plugin_name].onIPAddressLostCallback != undefined )
 					netIDCallbacks[plugin_name].onIPAddressLostCallback(id,lostip) ;
 		}
 		,function(id,recoveredip){
-			for( var plugin_name in netIDCallbacks )
+			for( let plugin_name in netIDCallbacks )
 				if( netIDCallbacks[plugin_name].onIPAddressRecoveredCallback != undefined )
 					netIDCallbacks[plugin_name].onIPAddressRecoveredCallback(id,recoveredip) ;
 		}
 		,function(id,oldip,newip){
-			for( var plugin_name in netIDCallbacks )
+			for( let plugin_name in netIDCallbacks )
 				if( netIDCallbacks[plugin_name].onIPAddressChangedCallback != undefined )
 					netIDCallbacks[plugin_name].onIPAddressChangedCallback(id,oldip,newip) ;
 		}
@@ -33,8 +36,8 @@ exports.init = function(pi){
 
 	// Plugin must return (possibly in promise) procedure call callback function.
 	// The signature is ( method , devid , propertyname , argument )
-	return onProcCall ;
-//	return ( method , devid , propertyname , argument) => 'Admin proc call: '+procname+'('+JSON.stringify(argument)+')' ;
+	return onProcCall;
+	//	return ( method , devid , propertyname , argument) => 'Admin proc call: '+procname+'('+JSON.stringify(argument)+')' ;
 } ;
 
 // Returns promise

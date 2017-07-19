@@ -35,6 +35,7 @@ function connectws(onconnect_func /* can be called multiple times */){
     let tid = 0 ;
     let waitlist = {} ;
     let sublist = {} ;
+    console.log('Trying to connect to '+location.host+'...') ;
 	connection.onopen = function () {
 		picogw = {
 			callproc : args=>{
@@ -100,7 +101,7 @@ function connectws(onconnect_func /* can be called multiple times */){
     	waitlist = {} ;
     	sublist = {} ;
     	picogw = undefined ;
-		alert('Websocket disconnected. Retrying in 3 secs.') ;
+		console.error('Websocket disconnected. Retrying in 3 secs.') ;
 		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
 	}
 } ;

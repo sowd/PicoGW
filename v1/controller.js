@@ -39,7 +39,8 @@ exports.init = function(_globals,clientFactory){
 						{VERSION:VERSION,admin:admin,PubSub:globals.PubSub}
 						,plugin_name) ;
 					var exportmethods = {} ;
-					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema','getSettings','getpath','getprefix']
+					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks','getSettingsSchema'
+						,'getSettings','getpath','getprefix']
 						.forEach(methodname => {
 						exportmethods[methodname] = function(){
 							return pc[methodname].apply(pc,arguments);

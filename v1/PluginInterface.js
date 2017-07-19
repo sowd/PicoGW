@@ -101,6 +101,9 @@ exports.PluginInterface = class {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
    		} catch(e){}
 	}
+	getPubKey(){ return globals.admin.getPubKey() ; }
+	encrypt(){ return globals.admin.getPubKey() ; }
+	decrypt(){ return globals.admin.decrypt() ; }
 	// handlerName = 'SettingsUpdated', etc...
 	on(handlerName,handler_body){ this['on'+handlerName] = handler_body ; }
 	off(handlerName){ delete this['on'+handlerName] ; this['on'+handlerName] = undefined ;}
