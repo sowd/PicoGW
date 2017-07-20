@@ -12,19 +12,15 @@
 			,"enum": ["DHCP","Static"]
 		}
 		,"ip": {
-			"title": "IP"
+			"title": "IP/MASKLEN"
 		    ,"type": "string"
 		}
-		,"netmask": {
-			"title": "Netmask"
-			,"type": "string"
-		}
 		,"default_gateway": {
-		   	"title": "Default Gateway"
-			,"type": "string"
+			"title": "Default gateway (if necessary)"
+		    ,"type": "string"
 		}
 		,"root_passwd": {
-			"title": "Root password"
+			"title": "Root password (unnecessary for Raspberry Pi)"
 			,"type": "string"
 			,"format":"password"
 		}
