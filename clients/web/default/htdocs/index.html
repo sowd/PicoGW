@@ -156,6 +156,10 @@ onload = function(){
         		var menu = {} ;
         		if( node_properties[node.id].settings_schema != undefined ){
 	        			menu.Settings = {label:'Settings',action:obj=>{
+		        			if( node_properties[node.id].settings_schema.error != undefined ){
+	        					alert(node_properties[node.id].settings_schema.error) ;
+	        					return ;
+		        			}
 
 							if( picogw == undefined ){
 								alert('Not connected to the gateway.') ;

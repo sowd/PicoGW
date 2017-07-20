@@ -3,6 +3,7 @@
 	,"type": "object"
 	,"required":["type"]
 	,"properties": {
+<<<<<<< Updated upstream
 			"type": {
 				"type": "string"
 				,"enum": ["DHCP","Static"]
@@ -24,5 +25,28 @@
 				,"type": "string"
 				,"format":"password"
 			}
+=======
+		"interface" : {
+			"type": "string"
+			,"enum": []
+		}
+		,"type": {
+			"type": "string"
+			,"enum": ["DHCP","Static"]
+		}
+		,"ip": {
+			"title": "IP/MASKLEN"
+		    ,"type": "string"
+		}
+		,"default_gateway": {
+		   	"title": "Default Gateway"
+			,"type": "string"
+		}
+		,"root_passwd": {
+			"title": "Root password (unnecessary for Raspberry Pi)"
+			,"type": "string"
+			,"format":"password"
+		}
+>>>>>>> Stashed changes
 	}
 }

@@ -4,6 +4,12 @@ let localStorage ;
 let ipv4 = require('./ipv4.js');
 let cryptico = require('cryptico');
 let sudo = require('sudo');
+
+var fs = require('fs');
+const exec = require('child_process').exec;
+
+const NMCLI_CONNECTION_NAME = 'picogw_conn' ;
+
 const RSA_BITS = 1024 ;
 let rsaKey , pubKey ;
 
@@ -35,16 +41,78 @@ exports.init = function(pi){
 		}
 	) ;
 
-	pluginInterface.setOnSettingsUpdatedCallback( newSettings => {
-		return new Promise((ac,rj)=>{
-			rj('Not implemented yet.') ;
-			/*
-			var child = sudo(['cat','/etc/shadow'],{password:newSettings.root_passwd}) ;
-			delete newSettings.root_passwd ;
-			child.stdout.on('data', function (data) {
-				rj(data.toString()) ;
+	pluginInterface.setOnGetSettingsSchemaCallback( function(){
+   		return new Promise((ac,rj)=>{
+			exec('nmcli d', (err, stdout, stderr) => {
+			  let lines = stdout.split("\n") ;
+			  if( err || lines.length<2 ){
+			  	ac({error:'nmcli should be installed first. Execute\n\n'
+			  		+'$ sudo apt-get install network-manager\n\nor\n\n$ sudo yum install NetworkManager'}) ;
+			  	return ;
+			  }
+			  lines.shift() ;
+			  if( lines.length==0 ){ ac({error:'No network available.'}) ; return ; }
+
+			  try {
+			  	var schema_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString()) ;
+				lines.forEach( line=>{
+				  	let sp = line.trim().split(/\s+/) ;
+				  	if( sp.length !=4 || sp[0]=='lo') return ;	// Illegally formatted line
+				  	schema_json.properties.interface.enum.push(sp[0]) ;
+				}) ;
+
+				if( schema_json.properties.interface.enum.length==0 ){ ac({error:'No network available.'}) ; return ; }
+		   			ac( schema_json ) ;
+		   	  } catch(e){ac({error:'Illigally formatted admin/settings_schema.json'});} 
 			});
-			*/
+
+		}) ;
+	}) ;
+
+	pluginInterface.setOnSettingsUpdatedCallback( function(newSettings){
+		return new Promise((ac,rj)=>{
+			let root_pwd = newSettings.root_passwd ;
+			newSettings.root_passwd = '' ;
+
+			let commands = [] ;
+			// Delete connection (may fail for first time)
+			commands.push(['nmcli','connection','delete',NMCLI_CONNECTION_NAME]) ;
+
+			if( newSettings.type == 'DHCP' ){
+				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
+				 ,'type','ethernet','ifname', newSettings.interface]) ;
+				commands.push(['nmcli','connection','modify',NMCLI_CONNECTION_NAME
+				 ,'ipv4.method','auto']) ;
+			} else {	// static ip
+				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
+				,'type','ethernet','ifname', newSettings.interface]) ;
+
+				if( newSettings.default_gateway == undefined )	newSettings.default_gateway = '' ;
+				let ipSetting = (newSettings.ip+' '+newSettings.default_gateway).trim() ;
+				commands.push(['nmcli','connection','modify',NMCLI_CONNECTION_NAME
+					,'ipv4.method','manual','ipv4.addresses',ipSetting]) ;
+			}
+
+			commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
+			commands.push(['nmcli','connection','up'  , NMCLI_CONNECTION_NAME]) ;
+
+			function ex(){
+				if( commands.length==0 ) return ;
+				let cmd = commands.shift() ;
+				log('Exec:'+cmd.join(" ")) ;
+				let child = sudo(cmd,{password:root_pwd}) ;
+				child.stderr.on('data',dat=>{
+					if( cmd[2] == 'delete' || cmd[2] == 'down' /*|| cmd[2] == 'up'*/ ) return ;
+					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;
+					rj('Error in executing\n\n$ '+cmd.join(' ')+'\n\n'+dat.toString()) ;	// Interrupt execution
+					commands = [] ;
+				}) ;
+				child.stdout.on('close',()=>{
+					if( commands.length == 0 ) ac() ;
+					else ex() ;
+				}) ;
+			}
+			ex() ;
 		}) ;
 	}) ;
 
