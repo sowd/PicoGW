@@ -40,7 +40,8 @@ exports.init = function(_globals,clientFactory){
 						,plugin_name) ;
 					var exportmethods = {} ;
 					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks'
-						,'getSettingsSchema','getSettings','setOnSettingsUpdatedCallback'
+						,'getSettingsSchema','getSettings'
+						,'setOnGetSettingsSchemaCallback','setOnGetSettingsCallback','setOnSettingsUpdatedCallback'
 						,'getpath','getprefix']
 						.forEach(methodname => {
 						exportmethods[methodname] = function(){
@@ -86,21 +87,34 @@ exports.callproc = function(params){
 	return new Promise( (ac,rj)=>{
 		try {
 			if( procedure.length == 0 ){ // access for '/v1/' => plugin list
-				var ps = {} ;
-				for( var prfx in Plugins ){
-					var plugin = Plugins[prfx] ;
+				let ps = {} ;
+				let prms = [] , prms_prfx = [] ;
+				for( let prfx in Plugins ){
+					let plugin = Plugins[prfx] ;
 					ps[prfx] = {
 						path : plugin.getpath()
 						, callable: (typeof plugin.procCallback == 'function')
 					} ;
-					if( args.option === 'true')
+					if( args.option === 'true'){
+						prms.push(plugin.getSettingsSchema()) ;
+						prms_prfx.push(prfx) ;
+						prms.push(plugin.getSettings()) ;
+						prms_prfx.push(prfx) ;
 						ps[prfx].option = {
-							leaf:false,doc:{short:'Plugin'}
-							,settings_schema : plugin.getSettingsSchema()
-							,settings : plugin.getSettings()
-						}
+							leaf:false
+							,doc:{short:'Plugin'}
+							//,settings_schema : .. , settings : .. (set later)
+						} ;
+					}
 				}
-				ac(ps) ;
+				if( prms.length == 0 )	ac(ps) ;
+				else Promise.all(prms).then(re=>{
+					for( let pi=0;pi<re.length;++pi ){
+						if( pi%2 == 0 )	ps[prms_prfx[pi]].option.settings_schema = re[pi] ;
+						else			ps[prms_prfx[pi]].option.settings = re[pi] ;
+					}
+					ac(ps) ;
+				}).catch(rj) ;
 				return ;
 			}
 			var terms = procedure.split('/') ;

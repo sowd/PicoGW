@@ -4,6 +4,9 @@ let localStorage ;
 let ipv4 = require('./ipv4.js');
 let cryptico = require('cryptico');
 let sudo = require('sudo');
+var fs = require('fs');
+const exec = require('child_process').exec;
+
 const RSA_BITS = 1024 ;
 let rsaKey , pubKey ;
 
@@ -35,9 +38,34 @@ exports.init = function(pi){
 		}
 	) ;
 
-	pluginInterface.setOnSettingsUpdatedCallback( newSettings => {
+	pluginInterface.setOnGetSettingsSchemaCallback( function(){
+   		return new Promise((ac,rj)=>{
+			try {
+   				ac(JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString())) ;
+	   		} catch(e){} 
+		}) ;
+	}) ;
+	pluginInterface.setOnSettingsUpdatedCallback( function(newSettings){
 		return new Promise((ac,rj)=>{
-			rj('Not implemented yet.') ;
+			exec('nmcli d', (err, stdout, stderr) => {
+			  if (err){	rj(JSON.stringify(err,null,'\t')); return }
+			  
+			  let lines = stdout.split("\n") ;
+			  if( lines.length<2 ){
+			  	rj('nmcli should be installed first. Execute\n\n$ sudo apt-get install network-manager\n\nor\n\n$ sudo yum install NetworkManager') ;
+			  	return ;
+			  }
+			  lines.shift() ;
+			  if( lines.length==0 ){ rj('No network available.') ; return ; }
+
+			  var re = "" ;
+			  lines.forEach( line=>{
+			  	re += line.split(/\s+/).join('|')+"\n" ;
+			  })
+			  rj(re);
+			});
+
+//			rj('Not implemented yet.') ;
 			/*
 			var child = sudo(['cat','/etc/shadow'],{password:newSettings.root_passwd}) ;
 			delete newSettings.root_passwd ;

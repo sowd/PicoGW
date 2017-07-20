@@ -64,8 +64,17 @@ exports.PluginInterface = class {
     			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
 	    	}
 	    } ;
-	    this.onSettingsUpdated = function(newsettings){} ;
-	}
+		this.getSettingsSchema = ()=>{ try {
+   			return JSON.parse(fs.readFileSync(this.getpath()+'settings_schema.json').toString()) ;
+   		} catch(e){} } ;
+		this.getSettings = ()=>{ try {
+   			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
+   		} catch(e){} } ;
+	    this.onSettingsUpdated = newsettings=>{} ;
+   	}
+	setOnGetSettingsSchemaCallback(callback){ this.getSettingsSchema = callback ; }
+	setOnGetSettingsCallback(callback){ this.getSettings = callback ; }
+	setOnSettingsUpdatedCallback(callback){ this.onSettingsUpdated = callback ; }
 
 	publish ( /*devid,*/ topicname, args) {
 		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
@@ -92,19 +101,7 @@ exports.PluginInterface = class {
 		globals.admin.setNetIDCallbacks_Forward(this.prefix , callbacks_obj) ;
 	}
 
-	getSettingsSchema(){
-   		try {
-   			return JSON.parse(fs.readFileSync(this.getpath()+'settings_schema.json').toString()) ;
-   		} catch(e){}
-	}
-	getSettings(){
-   		try {
-   			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
-   		} catch(e){}
-	}
-	setOnSettingsUpdatedCallback(callback){
-		this.onSettingsUpdated = callback ;
-	}
+
 	getPubKey(){ return globals.admin.getPubKey() ; }
 	encrypt(){ return globals.admin.getPubKey() ; }
 	decrypt(){ return globals.admin.decrypt() ; }
@@ -112,10 +109,7 @@ exports.PluginInterface = class {
 	on(handlerName,handler_body){ this['on'+handlerName] = handler_body ; }
 	off(handlerName){ delete this['on'+handlerName] ; this['on'+handlerName] = undefined ;}
 	// Get plugin home dir
-	getpath (){
-		return `${globals.VERSION}/plugins/${this.prefix}/`;
-	}
-	getprefix (){
-		return this.prefix;
-	}
+	getpath(){ return `${globals.VERSION}/plugins/${this.prefix}/` ; }
+
+	getprefix (){ return this.prefix; }
 } ;
