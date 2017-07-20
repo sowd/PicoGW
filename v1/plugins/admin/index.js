@@ -40,14 +40,37 @@ exports.init = function(pi){
 
 	pluginInterface.setOnGetSettingsSchemaCallback( function(){
    		return new Promise((ac,rj)=>{
-			try {
-   				ac(JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString())) ;
-	   		} catch(e){} 
+			exec('nmcli d', (err, stdout, stderr) => {
+			  if (err){	ac({error:'No network available'}); return }
+			  
+			  let lines = stdout.split("\n") ;
+			  if( lines.length<2 ){
+			  	ac({error:'nmcli should be installed first. Execute\n\n'
+			  		+'$ sudo apt-get install network-manager\n\nor\n\n$ sudo yum install NetworkManager'}) ;
+			  	return ;
+			  }
+			  lines.shift() ;
+			  if( lines.length==0 ){ ac({error:'No network available.'}) ; return ; }
+
+			  try {
+			  	var schema_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString()) ;
+				lines.forEach( line=>{
+				  	let sp = line.trim().split(/\s+/) ;
+				  	if( sp.length !=4 || sp[0]=='lo') return ;	// Illegally formatted line
+				  	schema_json.properties.interface.enum.push(sp[0]) ;
+				}) ;
+
+				if( schema_json.properties.interface.enum.length==0 ){ ac({error:'No network available.'}) ; return ; }
+		   			ac( schema_json ) ;
+		   	  } catch(e){ac({error:'Illigally formatted admin/settings_schema.json'});} 
+			});
+
 		}) ;
 	}) ;
+
 	pluginInterface.setOnSettingsUpdatedCallback( function(newSettings){
 		return new Promise((ac,rj)=>{
-			exec('nmcli d', (err, stdout, stderr) => {
+			/*exec('nmcli d', (err, stdout, stderr) => {
 			  if (err){	rj(JSON.stringify(err,null,'\t')); return }
 			  
 			  let lines = stdout.split("\n") ;
@@ -63,16 +86,17 @@ exports.init = function(pi){
 			  	re += line.split(/\s+/).join('|')+"\n" ;
 			  })
 			  rj(re);
-			});
+			});*/
 
 //			rj('Not implemented yet.') ;
-			/*
-			var child = sudo(['cat','/etc/shadow'],{password:newSettings.root_passwd}) ;
+			
+			//var child = sudo(['cat','/etc/shadow'],{password:newSettings.root_passwd}) ;
 			delete newSettings.root_passwd ;
-			child.stdout.on('data', function (data) {
-				rj(data.toString()) ;
-			});
-			*/
+			ac() ;
+			//child.stdout.on('data', function (data) {
+				//rj(data.toString()) ;
+			//});
+
 		}) ;
 	}) ;
 

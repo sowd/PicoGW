@@ -64,12 +64,16 @@ exports.PluginInterface = class {
     			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
 	    	}
 	    } ;
+
+	    //These can return Promise, but never call reject().
 		this.getSettingsSchema = ()=>{ try {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings_schema.json').toString()) ;
    		} catch(e){} } ;
 		this.getSettings = ()=>{ try {
    			return JSON.parse(fs.readFileSync(this.getpath()+'settings.json').toString()) ;
    		} catch(e){} } ;
+
+   		
 	    this.onSettingsUpdated = newsettings=>{} ;
    	}
 	setOnGetSettingsSchemaCallback(callback){ this.getSettingsSchema = callback ; }
