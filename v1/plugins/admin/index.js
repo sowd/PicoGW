@@ -75,6 +75,7 @@ exports.init = function(pi){
 
 			let commands = [] ;
 			// Delete connection (may fail for first time)
+			commands.push(['nmcli','connection','down',NMCLI_CONNECTION_NAME]) ;
 			commands.push(['nmcli','connection','delete',NMCLI_CONNECTION_NAME]) ;
 
 			if( newSettings.type == 'DHCP' ){
@@ -95,13 +96,14 @@ exports.init = function(pi){
 			commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
 			commands.push(['nmcli','connection','up'  , NMCLI_CONNECTION_NAME]) ;
 
+			const ignore_error_cmds = ['delete','down' /*,'up'*/] ;
 			function ex(){
 				if( commands.length==0 ) return ;
 				let cmd = commands.shift() ;
 				log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
 				child.stderr.on('data',dat=>{
-					if( cmd[2] == 'delete' || cmd[2] == 'down' /*|| cmd[2] == 'up'*/ ) return ;
+					if( ignore_error_cmds.indexOf(cmd[2]) >= 0 ) return ;
 					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;
 					rj('Error in executing\n\n$ '+cmd.join(' ')+'\n\n'+dat.toString()) ;	// Interrupt execution
 					commands = [] ;
