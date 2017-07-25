@@ -1,23 +1,36 @@
 {
 	"title": "Admin Settings"
 	,"type": "object"
-	,"required":["type"]
-	,"properties": {
-		"interface" : {
-			"type": "string"
-			,"enum": []
+	,"properties":{
+		"interfaces":{
+			"title": "Network Interfaces"
+			,"type": "object"
+			,"oneOf": []
 		}
-		,"type": {
-			"type": "string"
-			,"enum": ["DHCP","Static"]
-		}
-		,"ip": {
-			"title": "IP/MASKLEN"
-		    ,"type": "string"
-		}
-		,"default_gateway": {
-			"title": "Default gateway (if necessary)"
-		    ,"type": "string"
+		,"detail":{
+			"title": "Detailed network settings"
+			,"type": "object"
+			,"additionalProperties": false
+			,"oneOf":[
+				{
+					"title":"DHCP"
+				}
+				,{
+					"title":"Static"
+					,"type":"object"
+					,"properties":{
+						"ip": {
+							"title": "IP/MASKLEN (eg. 192.168.1.10/24)"
+						    ,"type": "string"
+						}
+						,"default_gateway": {
+							"title": "Default gateway (if necessary. eg. 192.168.1.1)"
+						    ,"type": "string"
+						}
+
+					}
+				}
+			]
 		}
 		,"root_passwd": {
 			"title": "Root password (unnecessary for Raspberry Pi)"

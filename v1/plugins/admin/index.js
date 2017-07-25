@@ -53,15 +53,41 @@ exports.init = function(pi){
 			  if( lines.length==0 ){ ac({error:'No network available.'}) ; return ; }
 
 			  try {
-			  	var schema_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString()) ;
+				let schema_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema.json').toString()) ;
+
+
+				let schema_default_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema_default.json').toString()) ;
+				let schema_wlan_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema_wlan.json').toString()) ;
+				// Correct visible APs should be listed
+				let bWlanExist = false ;
 				lines.forEach( line=>{
 				  	let sp = line.trim().split(/\s+/) ;
 				  	if( sp.length !=4 || sp[0]=='lo') return ;	// Illegally formatted line
-				  	schema_json.properties.interface.enum.push(sp[0]) ;
+
+			  		let prop = {} ;
+
+
+					if( sp[0].indexOf('wlan')==0 ){
+						bWlanExist = true ;
+						prop[sp[0]] = schema_wlan_json ;
+					} else
+						prop[sp[0]] = schema_default_json ;
+
+				  	schema_json.properties.interfaces.oneOf.push({
+				  		title:sp[0]
+				  		,type:'object'
+				  		,additionalProperties: false
+				  		,properties:prop
+				  	}) ;
 				}) ;
 
-				if( schema_json.properties.interface.enum.length==0 ){ ac({error:'No network available.'}) ; return ; }
-		   			ac( schema_json ) ;
+				if( bWlanExist )
+					schema_wlan_json.properties.apname.enum = ["AP1","AP2","APx"] ;
+
+				log(JSON.stringify(schema_json,null,'\t')) ;
+				if( schema_json.properties.interfaces.oneOf.length==0){ ac({error:'No network available.'}) ; return ; }
+		   		ac( schema_json ) ;
+
 		   	  } catch(e){ac({error:'Illigally formatted admin/settings_schema.json'});} 
 			});
 
@@ -72,6 +98,7 @@ exports.init = function(pi){
 		return new Promise((ac,rj)=>{
 			let root_pwd = newSettings.root_passwd ;
 			newSettings.root_passwd = '' ;
+			ac();return;
 
 			let commands = [] ;
 			// Delete connection (may fail for first time)
