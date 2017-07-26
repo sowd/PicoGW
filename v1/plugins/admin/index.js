@@ -153,12 +153,13 @@ exports.init = function(pi){
 				interf = k ;
 			let ss = newSettings.interfaces[interf] ;
 
-			if( interf.indexOf('wlan')==0 )
+			if( interf.indexOf('wlan')==0 ){
+				const ap_pwd = ss.password ; ss.password = '' ;
 				commands.push(['nmcli','device','wifi','connect'
 					,(ss.apname_manual.trim().length==0 ? ss.apname : ss.apname_manual.trim())
-					,'password',ss.password
+					,'password',ap_pwd
 					,'ifname',interf ,'name',NMCLI_CONNECTION_NAME]) ;
-			else if( interf.indexOf('eth')==0 )
+			} else if( interf.indexOf('eth')==0 )
 				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
 				 ,'type','ethernet','ifname', interf]) ;
 
