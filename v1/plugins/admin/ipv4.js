@@ -220,7 +220,12 @@ function ping_all(){
 	for( let ip in ping_ips_copy ){
 		setTimeout(()=>{
 			//console.log('Pinging to '+ip+'...') ;
-			ping.sys.probe(ip, function(isActive){}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
+			try {
+				ping.sys.probe(ip, function(isActive){}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
+			} catch(e){
+				console.log('Failed to ping, ignoring error. ' + ip);
+				console.log(e);
+			}
 		}, parseInt(PING_RANDOM_RANGE * Math.random())) ;
 	}
 
