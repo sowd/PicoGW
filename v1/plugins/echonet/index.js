@@ -291,7 +291,9 @@ exports.init = function(pi /*,globals*/){
 	};
 
 	var elsocket = EL.initialize(
-		[MY_EOJ.map(e=>('0'+e.toString(16)).slice(-2)).join('')] , ( rinfo, els ) => {}) ;
+		[MY_EOJ.map(e=>('0'+e.toString(16)).slice(-2)).join('')] , ( rinfo, els , err ) => {
+			if(err){ log("EL Error:\n"+JSON.stringify(err,null,"\t")); }
+		}) ;
 
 	function searcher(){
 		EL.search();
