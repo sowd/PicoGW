@@ -187,8 +187,8 @@ exports.init = function(pi){
 				log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
 				child.stderr.on('data',dat=>{
-					if( ignore_error_cmds.indexOf(cmd[2]) >= 0 ) return ;
 					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;
+					if( ignore_error_cmds.indexOf(cmd[2]) >= 0 ) return ;
 					rj('Error in executing\n\n$ '+cmd.join(' ')+'\n\n'+dat.toString()) ;	// Interrupt execution
 					commands = [] ;
 				}) ;
