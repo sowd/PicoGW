@@ -33,7 +33,7 @@
 			]
 		}
 		,"root_passwd": {
-			"title": "Root password (unnecessary for Raspberry Pi)"
+			"title": "Sudo password"
 			,"type": "string"
 			,"format":"password"
 		}
