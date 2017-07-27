@@ -46,7 +46,13 @@ exports.init = function(pi){
 			  let lines = stdout.split("\n") ;
 			  if( err || lines.length<2 ){
 			  	ac({error:'nmcli should be installed first. Execute\n\n'
-			  		+'$ sudo apt-get install network-manager\n\nor\n\n$ sudo yum install NetworkManager'}) ;
+			  		+'$ sudo apt-get install network-manager\n\nor\n\n$ sudo yum install NetworkManager\n\n'
+			  		+'Also, you need to free your network devices from existing framework by, for example, edit /etc/network/interfaces to contain only two lines:\n\n'
+			  		+'auto lo\n'
+			  		+'iface lo inet loopback\n\n'
+			  		+'and reboot. In addition, you may want to uninstall dhcpcd5 (if exist) by\n\n'
+			  		+'$ sudo apt-get purge dhcpcd5'
+			  	}) ;
 			  	return ;
 			  }
 			  lines.shift() ;
@@ -154,11 +160,9 @@ exports.init = function(pi){
 			let ss = newSettings.interfaces[interf] ;
 
 			if( interf.indexOf('wlan')==0 ){
-				const ap_pwd = ss.password ; ss.password = '' ;
-				commands.push(['nmcli','device','wifi','connect'
-					,(ss.apname_manual.trim().length==0 ? ss.apname : ss.apname_manual.trim())
-					,'password',ap_pwd
-					,'ifname',interf ,'name',NMCLI_CONNECTION_NAME]) ;
+				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
+					,'type','wifi','ifname', interf, 'ssid'
+					,(ss.apname_manual.trim().length==0 ? ss.apname : ss.apname_manual.trim())]) ;
 			} else if( interf.indexOf('eth')==0 )
 				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
 				 ,'type','ethernet','ifname', interf]) ;
@@ -174,17 +178,22 @@ exports.init = function(pi){
 					,'ipv4.method','manual','ipv4.addresses',ipSetting]) ;
 			}
 
+			if( interf.indexOf('wlan')==0 ){
+				const ap_pwd = ss.password ; ss.password = '' ;
+				commands.push(['nmcli','connection','modify',NMCLI_CONNECTION_NAME
+					,'wifi-sec.key-mgmt','wpa-psk','wifi-sec.psk',ap_pwd]) ;
+			}
 			commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
 			commands.push(['nmcli','connection','up'  , NMCLI_CONNECTION_NAME]) ;
 
 			//log('Commands:') ;
 			//log(JSON.stringify(commands,null,'\t')) ;
 
-			const ignore_error_cmds = ['delete','down' ,'up'] ;
+			const ignore_error_cmds = ['delete','down' /*,'up'*/] ;
 			function ex(){
 				if( commands.length==0 ) return ;
 				let cmd = commands.shift() ;
-				log('Exec:'+cmd.join(" ")) ;
+				//log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
 				child.stderr.on('data',dat=>{
 					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;

@@ -3,7 +3,7 @@
 	,"type": "object"
 	,"properties":{
 		"interfaces":{
-			"title": "Network Interfaces"
+			"title": "Network Interfaces (THIS WILL DESTROY YOUR CURRENT NETWORK CONNECTION!)"
 			,"type": "object"
 			,"oneOf": []
 		}
