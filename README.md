@@ -79,21 +79,7 @@ The concept of this API is as follows:
 ### Calling convention
 
 The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. All APIs exist under **/v1/** (The root **/** access shows the control panel.)
-You can always write the API code in the URL field of your browser (HTTP GET access). Although some API favors HTTP PUT access, you can still mimic it by GET access with **/PUT** added to the end of the original URL. For example, PUT access to the following URL:
-
-> PUT http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/
-
-with the body is set as:
-
-> {"value":"on"}
-
-equals to GET access to the following URL:
-
-> GET http://192.168.1.10:8080/v1/echonet/AirConditioner_1/OperatingState/PUT?value=on
-
-Although REST does not recommend to put verb into the URL (URI), we dare to adopt this option, because GET access is extraordinaly easy compared to other methods. In addition, PUT methods is not necessarily supported by all browsers.
-
-As shown in the above example, this PUT emulation takes additional parameters as GET parameter (after **?** character.)
+You can always write the API code in the URL field of your browser (HTTP GET access). 
 
 ### API directory
 
@@ -147,9 +133,6 @@ There are serveral ways to specify NEWVAL:
 2. If you want to set it as a hex array, each hex number should be specifies as a string such as **["0x30"]**.
 3. If the length of the array is exactly one, you can directly write the element itself such as **48** or **"0x30"**.
 4. Exceptionally, some properties supports more meaningful string such as **"on"** or **"off"**.
-
-This PUT access equals to the GET access of:
-> GET /v1/echonet/[DeviceID]/[PropertyID]/PUT?value=NEWVAL
 
 #### GET /v1/echonet/[REGEXP]/[PropertyID]
 
