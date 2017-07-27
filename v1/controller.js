@@ -118,7 +118,8 @@ exports.callproc = function(params){
 				return ;
 			}
 			var terms = procedure.split('/') ;
-			var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms[2] ;
+			while(terms[terms.length-1]=='') terms.pop() ;
+			var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms.slice(2).join('/') ;
 
 			// Update settings.json
 			if( method === 'POST' && Plugins[pprefix] != undefined
@@ -140,7 +141,7 @@ exports.callproc = function(params){
 
 			if( pdevid != undefined && pdevid.length==0 )		pdevid = undefined ;
 			if( ppropname != undefined && ppropname.length==0 )	ppropname = undefined ;
-			if( terms.length > 3 && terms[3].length>0)	method = terms[3] ;
+			//if( terms.length > 3 && terms[3].length>0)	method = terms[3] ;
 			var proccallback = Plugins[pprefix].procCallback ;
 			if( typeof proccallback == 'function'){
 
