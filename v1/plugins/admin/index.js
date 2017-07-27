@@ -179,7 +179,11 @@ exports.init = function(pi){
 			}
 
 			if( interf.indexOf('wlan')==0 ){
-				const ap_pwd = ss.password ; ss.password = '' ;
+				if( ss.password != ss.password2 ){
+					rj('Password mismatch.') ;
+					return ;
+				}
+				const ap_pwd = ss.password ; ss.password = ss.password2 = '' ;
 				commands.push(['nmcli','connection','modify',NMCLI_CONNECTION_NAME
 					,'wifi-sec.key-mgmt','wpa-psk','wifi-sec.psk',ap_pwd]) ;
 			}

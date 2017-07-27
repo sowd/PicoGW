@@ -16,6 +16,11 @@
 			,"type":"string"
 			,"format":"password"
 		}
+		,"password2":{
+			"title":"AP password confirmation (input the same one)"
+			,"type":"string"
+			,"format":"password"
+		}
 	}
 
 }
