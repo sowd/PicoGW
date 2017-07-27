@@ -7,7 +7,7 @@ let sudo = require('sudo');
 var fs = require('fs');
 const exec = require('child_process').exec;
 
-const NMCLI_CONNECTION_NAME = 'picogw_conn' ;
+const NMCLI_CONNECTION_NAME_PREFIX = 'picogw_conn' ;
 
 const RSA_BITS = 1024 ;
 let rsaKey , pubKey ;
@@ -149,15 +149,16 @@ exports.init = function(pi){
 			//log('NewSettings:') ;
 			//log(JSON.stringify(newSettings,null,'\t')) ;
 
-			let commands = [] ;
-			// Delete connection (may fail for first time)
-			commands.push(['nmcli','connection','down',NMCLI_CONNECTION_NAME]) ;
-			commands.push(['nmcli','connection','delete',NMCLI_CONNECTION_NAME]) ;
-
 			let interf ;
 			for( let k in newSettings.interfaces )
 				interf = k ;
 			let ss = newSettings.interfaces[interf] ;
+
+			const NMCLI_CONNECTION_NAME = NMCLI_CONNECTION_NAME_PREFIX ;//+ '_' + interf ;
+			let commands = [] ;
+			// Delete connection (may fail for first time)
+			commands.push(['nmcli','connection','down',NMCLI_CONNECTION_NAME]) ;
+			commands.push(['nmcli','connection','delete',NMCLI_CONNECTION_NAME]) ;
 
 			if( interf.indexOf('wlan')==0 ){
 				commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
@@ -187,7 +188,7 @@ exports.init = function(pi){
 				commands.push(['nmcli','connection','modify',NMCLI_CONNECTION_NAME
 					,'wifi-sec.key-mgmt','wpa-psk','wifi-sec.psk',ap_pwd]) ;
 			}
-			commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
+			//commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
 			commands.push(['nmcli','connection','up'  , NMCLI_CONNECTION_NAME]) ;
 
 			//log('Commands:') ;
@@ -197,7 +198,7 @@ exports.init = function(pi){
 			function ex(){
 				if( commands.length==0 ) return ;
 				let cmd = commands.shift() ;
-				//log('Exec:'+cmd.join(" ")) ;
+				log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
 				child.stderr.on('data',dat=>{
 					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;
