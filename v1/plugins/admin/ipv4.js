@@ -17,9 +17,9 @@ const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_TIMEOU
 
 var arped = require('arped');
 var ping = require('ping');
+var os = require('os');
 
-var ipmask = require('ipmask') ;
-var mynetinfo = ipmask() ;	// updated on all ping timing
+var mynetinfo = myAddresses() ;	// updated on all ping timing
 console.log('Network info:'+JSON.stringify(mynetinfo)) ;
 
 // ID == mac address
@@ -27,9 +27,11 @@ var onIPMacFoundCallback = {} ;
 exports.getNetIDFromIPv4Address = function(ip){
 	return new Promise((ac,rj)=>{
 		chkArpTable() ;
-		if( ip == mynetinfo.address ){
-			ac(mynetinfo.mac) ;
-			return ;
+		for( const iface of mynetinfo ){
+			if( iface.address == ip ){
+				ac(iface.mac) ;
+				return ;
+			}
 		}
 		var candidate ;
 		// Prioritize active macs.
@@ -88,9 +90,25 @@ exports.getmacs = ()=>macs ;
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
+//  Return my network interfaces
+function myAddresses(){
+	let ifaces = os.networkInterfaces() ;
+	let ret = [] ;
+	for( const i in ifaces ){
+		ret = ret.concat(ifaces[i].filter(e => {
+			return (e.family === 'IPv4' && e.internal === false);
+		})) ;
+	}
+	return ret ;
+}
+
+//////////////////////////////////////////////
+//////////////////////////////////////////////
 //  Check arp table and update macs
 var macs = {} ;
-macs[mynetinfo.mac] = {active:true, localhost:true, log: [ {ip:mynetinfo.address,timestamp:Date.now()} ]} ;
+for( const iface of mynetinfo ){
+	macs[iface.mac] = {active:true, localhost:true, log: [ {ip:iface.address,timestamp:Date.now()} ]} ;
+}
 var d = 0 ;
 function deactivatemacbyip(ip){
 	var prev_actives = [] ;
@@ -189,31 +207,33 @@ function ping_all(){
 
 	if( COMPLETE_IP_SCAN ){
 		// add unknown ip address to ping list
-		mynetinfo = ipmask();
-		if( macs[mynetinfo.mac].log[0].ip == mynetinfo.address )
-			macs[mynetinfo.mac].log[0].timestamp = Date.now() ;
-		else
-			macs[mynetinfo.mac].log.unshift( {ip:mynetinfo.address,timestamp:Date.now()} ) ;
+		mynetinfo = myAddresses() ;
+		for( const iface of mynetinfo ){
+			if( macs[iface.mac].log[0].ip == iface.address )
+				macs[iface.mac].log[0].timestamp = Date.now() ;
+			else
+				macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;
 
-		var mask = 0 , subnet = 0 ;
-		mynetinfo.netmask.split('.').forEach( b => {
-			mask = mask*256 + parseInt(b) ;
-		} ) ;
-		mynetinfo.address.split('.').forEach( b => {
-			subnet = subnet*256 + parseInt(b) ;
-		} ) ;
-		subnet = subnet & mask ;
+			var mask = 0 , subnet = 0 ;
+			iface.netmask.split('.').forEach( b => {
+				mask = mask*256 + parseInt(b) ;
+			} ) ;
+			iface.address.split('.').forEach( b => {
+				subnet = subnet*256 + parseInt(b) ;
+			} ) ;
+			subnet = subnet & mask ;
 
-		while(mask!=0x100000000) {
-			var ip = ((subnet >>24) & 0xFF)
-				+ '.'+((subnet >> 16) & 0xFF)
-				+ '.'+((subnet >> 8) & 0xFF)
-				+ '.'+ (subnet & 0xFF) ;
-			++subnet ;
-			++mask ;
+			while(mask!=0x100000000) {
+				var ip = ((subnet >>24) & 0xFF)
+					+ '.'+((subnet >> 16) & 0xFF)
+					+ '.'+((subnet >> 8) & 0xFF)
+					+ '.'+ (subnet & 0xFF) ;
+				++subnet ;
+				++mask ;
 
-			if( ping_ips_copy[ip] == undefined && ip != mynetinfo.address )
-				ping_ips_copy[ip] = null ;
+				if( ping_ips_copy[ip] == undefined && ip != iface.address )
+					ping_ips_copy[ip] = null ;
+			}
 		}
 	}
 
