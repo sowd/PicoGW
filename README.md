@@ -216,7 +216,7 @@ Then a value change is asynchronously notified by a PUB JSON object.
 [mime](https://www.npmjs.com/package/mime)  
 [opts](https://www.npmjs.com/package/opts)  
 [ping](https://www.npmjs.com/package/ping)  
-[sudo](https://www.npmjs.com/package/sudo)  
+[sudo](https://github.com/calmh/node-sudo)  
 
 #### Apache 2
 

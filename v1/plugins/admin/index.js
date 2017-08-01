@@ -3,7 +3,7 @@ let log = console.log ;
 let localStorage ;
 let ipv4 = require('./ipv4.js');
 let cryptico = require('cryptico');
-let sudo = require('sudo');
+let sudo = require('./sudo.js');
 var fs = require('fs');
 const exec = require('child_process').exec;
 
