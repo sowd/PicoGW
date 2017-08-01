@@ -154,7 +154,7 @@ exports.init = function(pi){
 				interf = k ;
 			let ss = newSettings.interfaces[interf] ;
 
-			const NMCLI_CONNECTION_NAME = NMCLI_CONNECTION_NAME_PREFIX ;//+ '_' + interf ;
+			const NMCLI_CONNECTION_NAME = NMCLI_CONNECTION_NAME_PREFIX + '_' + interf ;
 			let commands = [] ;
 			// Delete connection (may fail for first time)
 			commands.push(['nmcli','connection','down',NMCLI_CONNECTION_NAME]) ;
@@ -198,7 +198,7 @@ exports.init = function(pi){
 			function ex(){
 				if( commands.length==0 ) return ;
 				let cmd = commands.shift() ;
-				log('Exec:'+cmd.join(" ")) ;
+				//log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
 				child.stderr.on('data',dat=>{
 					console.error('Error in executing\n$ '+cmd.join(' ')+'\n'+dat.toString()) ;

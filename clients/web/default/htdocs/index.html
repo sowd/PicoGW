@@ -254,7 +254,7 @@ onload = function(){
 		type: 'GET'
 		,url: 'https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/README.md'
 		,success: content=>{
-			const START_POINT = content.indexOf('## Web API') ;
+			const START_POINT = content.indexOf('## Remarks') ;
 			const LICENSE_POINT = content.indexOf('## Licenses') ;
 			var apihowto = content.slice( START_POINT , LICENSE_POINT) ;
 			var license = content.slice( LICENSE_POINT ) ;

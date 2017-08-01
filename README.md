@@ -64,6 +64,10 @@ $ node main.js -p 12345
 $ echo '{"makercode":1234}' > v1/plugins/echonet/localstorage.json
 ```
 
+## Remarks
+
++ If your Linux has multiple network interfaces, ECHONET Lite is available for only one of them. It is because Linux accepts only one default gateway (which is used for ECHONET Lite multicasting) per machene. By default, NetworkManager sets Ethernet as the default gateway network interface. If no ethernet connection is available, wlan0 (and so on) will become the default.
+
 ## Web API
 
 The Web API hosted by PicoGW is a developing version of [Housing API by Daiwa House Industry.](http://www.daiwahouse.co.jp/lab/HousingAPI/) The API design is mainly done by [Shigeru Owada@Kanagawa Instuitute of Technology](https://github.com/sowd). If you have any criticisms, requests, or questions, please feel free to post your opinion to the [Issues page](https://github.com/KAIT-HEMS/PicoGW/issues).
