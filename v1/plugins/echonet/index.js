@@ -193,19 +193,27 @@ exports.init = function(pi /*,globals*/){
 					}
 				}
 
+				function instanceListProc(ilist){
+					var inst_num = parseInt(ilist.slice(0,2)) ;
+					var insts = ilist.slice(2) ;
+					while( insts.length>5 ){
+						onDevFound(insts.slice(0,6)) ;
+						insts = insts.slice(6) ;
+					}
+					savemac() ;
+				}
+
 				if( seoj != '0ef0' ){
 					onDevFound(els.SEOJ) ;
 					savemac() ;
 				} else if(els.DEOJ == '0ef001' && els.ESV == '73'
 					&& els.DETAILs != undefined && els.DETAILs.d5 != undefined ){
 					// Device added to network announcement
-					var inst_num = parseInt( els.DETAILs.d5.slice(0,2) ) ;
-					var insts = els.DETAILs.d5.slice(2) ;
-					while( insts.length>5 ){
-						onDevFound(insts.slice(0,6)) ;
-						insts = insts.slice(6) ;
-					}
-					savemac() ;
+					instanceListProc(els.DETAILs.d5) ;
+				} else if(els.SEOJ == '0ef001' && els.ESV == '72'
+					&& els.DETAILs != undefined && els.DETAILs.d6 != undefined ){
+					// Respose for searching node instance list
+					instanceListProc(els.DETAILs.d6) ;
 				}
 
 
