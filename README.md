@@ -66,7 +66,7 @@ $ echo '{"makercode":1234}' > v1/plugins/echonet/localstorage.json
 
 ## Remarks
 
-+ Event if your Linux has multiple network interfaces, ECHONET Lite is available for only one of them. It is because NetworkManager we use to setup network configuration sets only one default gateway (which is used for ECHONET Lite multicasting) per machine. By default, NetworkManager sets wired Ethernet as the default gateway network interface. If no ethernet connection is available, wlan0 (and so on) will become the default.
++ Even if your Linux has multiple network interfaces, ECHONET Lite communication is available for only one of them. It is because [NetworkManager](https://wiki.gnome.org/Projects/NetworkManager) (the tool we use to setup network configuration) sets only one default gateway (which is used for ECHONET Lite multicasting) per machine. By default, NetworkManager sets wired Ethernet as the default gateway network interface. If no wired ethernet connection is available, wlan0 (or other wireless network) will become the default.
 
 ## Web API
 
