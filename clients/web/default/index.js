@@ -5,6 +5,7 @@ var express = require('express') ;
 const bodyParser = require('body-parser');
 var mime = require('mime') ;
 var fs = require('fs');
+var pathm = require('path');
 
 var clientInterface , globals;
 
@@ -54,7 +55,7 @@ exports.init = function(_clientInterface,_globals){
 		var path = req.path ;
 		if( path.charAt(path.length-1)=='/')	path += 'index.html' ;
 
-		fs.readFile(__filename.split('/').slice(0,-1).join('/')+'/htdocs'+path,(err,data)=>{
+		fs.readFile(pathm.join(pathm.dirname(__filename), 'htdocs', path), (err,data)=>{
 			if(err){
 				res.status(404).send('No such resource');
 				return ;
