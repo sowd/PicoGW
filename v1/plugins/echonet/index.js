@@ -298,9 +298,32 @@ exports.init = function(pi /*,globals*/){
 		}) ;
 	};
 
+	function onReceiveGetRequest( ip, els ){
+		try {
+			let esv = EL.GET_RES ;
+			const props = parseEDTs(els) ;
+			for( let prop of props ){
+				if( EL.Node_details[prop.epc] )
+					prop.edt = EL.Node_details[prop.epc] ;
+				else
+					esv = EL.GET_SNA ;
+				if( prop.edt == null || prop.edt.length == 0 )
+					esv = EL.GET_SNA ;
+			}
+			sendFrame( ip, els.TID, els.DEOJ, els.SEOJ, esv, props );
+		} catch(e){
+			console.error("onReceiveGetRequest error.");
+			console.dir(e);
+		}
+	}
+
 	var elsocket = EL.initialize(
 		[MY_EOJ.map(e=>('0'+e.toString(16)).slice(-2)).join('')] , ( rinfo, els , err ) => {
-			if(err){ log("EL Error:\n"+JSON.stringify(err,null,"\t")); }
+			if(err){ log("EL Error:\n"+JSON.stringify(err,null,"\t")); return; }
+			if( els.DEOJ != '0ef000' && els.DEOJ != '0ef001' ){ // 0effxx has already been processed in echonet-lite npm
+				if( els.ESV == EL.GET )
+					onReceiveGetRequest(rinfo.address, els);
+			}
 		}) ;
 
 	function searcher(){
@@ -404,6 +427,70 @@ function registerExistingDevice( devid ){
 	log(`Device ${devid}:${ip} registered.`) ;
 }
 
+function parseEDTs(els){
+	const props = [] ;
+	const array = EL.toHexArray( els.DETAIL ) ; //EDTs
+	let now = 0 ;
+	for( let i = 0; i< els.OPC; i++ ){
+		const epc = array[now] ;
+		now++ ;
+		const pdc = array[now] ;
+		now++ ;
+		const edt = [] ;
+		for( let j = 0; j < pdc; j++ ){
+			edt.push(array[now]) ;
+			now++ ;
+		}
+		props.push({'epc': EL.toHexString(epc), 'edt': EL.bytesToString(edt)}) ;
+	}
+	return props ;
+}
+
+// send echonet-lite frame with multiple properties
+function sendFrame( ip, tid, seoj, deoj, esv, properties ){
+	if( typeof(tid) == "string" ){
+		tid = EL.toHexArray(tid) ;
+	}
+
+	if( typeof(seoj) == "string" ){
+		seoj = EL.toHexArray(seoj) ;
+	}
+
+	if( typeof(deoj) == "string" ){
+		deoj = EL.toHexArray(deoj) ;
+	}
+
+	if( typeof(esv) == "string" ){
+		esv = (EL.toHexArray(esv))[0] ;
+	}
+
+	let propBuff = [];
+	for( const prop of properties ){
+		let epc = prop.epc ;
+		if( typeof(epc) == "string" ){
+			epc = (EL.toHexArray(epc))[0] ;
+		}
+
+		let edt = prop.edt ;
+		if( typeof(edt) == "number" ){
+			edt = [edt] ;
+		}else if( typeof(edt) == "string" ){
+			edt = EL.toHexArray(edt) ;
+		}
+		propBuff = propBuff.concat([epc, edt.length]) ;	// EPC, PDC
+		propBuff = propBuff.concat(edt) ;				// EDT
+	}
+
+	var buffer;
+	buffer = new Buffer([
+		0x10, 0x81,
+		tid[0], tid[1],
+		seoj[0], seoj[1], seoj[2],
+		deoj[0], deoj[1], deoj[2],
+		esv,
+		properties.length].concat(propBuff));
+	EL.sendBase( ip, buffer ) ;
+}
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
