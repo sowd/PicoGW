@@ -675,9 +675,9 @@ function onProcCall_Get( method , devid , propname , args ){
 		}
 	}
 	if( epc_hex == undefined ){
-		if(propname.length == 2 && parseInt('0x'+propname)!=NaN)
+		if(propname.length == 2 && !isNaN(parseInt('0x'+propname)))
 			epc_hex = propname.toLowerCase() ;
-		else if(parseInt(propname)!=NaN)
+		else if(!isNaN(parseInt(propname)))
 			epc_hex = ('0'+(parseInt(propname)&0xff).toString(16)).slice(-2) ;
 		else return {error:'Unknown property name:'+propname} ;
 	}
@@ -702,9 +702,9 @@ function onProcCall_Put( method , devid , propname , args ){
 		}
 	}
 	if( epc_hex == undefined ){
-		if(propname.length == 2 && parseInt('0x'+propname)!=NaN)
+		if(propname.length == 2 && !isNaN(parseInt('0x'+propname)))
 			epc_hex = propname.toLowerCase() ;
-		else if(parseInt(propname)!=NaN)
+		else if(!isNaN(parseInt(propname)))
 			epc_hex = ('0'+(parseInt(propname)&0xff).toString(16)).slice(-2) ;
 		else return {error:'Unknown property name:'+propname} ;
 	}

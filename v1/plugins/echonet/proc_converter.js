@@ -68,7 +68,7 @@ exports.eojs = {
 		,'b3':[ x=>x[0]	// Temperature
 			, x=>{
 				var xi = parseInt(x) ;
-				if( xi == NaN || xi<0 || xi>50 ) return x ;
+				if( isNaN(xi) || xi<0 || xi>50 ) return x ;
 				return [xi] ;
 				//return ('0'+xi.toString(16)).slice(-2) ;
 			} ]
