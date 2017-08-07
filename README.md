@@ -162,32 +162,31 @@ Currently, there is nothing under /v2/ except /v2/function. By calling APIs unde
 
 One or more human readable or shorter name can be assigned to each API path. This functionality is called as 'Aliasing'.
 
-##### GET /v2/function/alias
+#### GET /v2/function/alias
 
 Shows the list of currently defined aliases
 
-##### POST /v2/function/alias/[Alias name]
+#### POST /v2/function/alias/[Alias name]
 
 Parameter object (specified in body): {"path":"[Associated API path]"}
 
 Defines new alias with the specified path.
 
-##### PUT /v2/function/alias/[Alias name]
+#### PUT /v2/function/alias/[Alias name]
 
 Parameter object (specified in body): {"path":"[Associated API path]"}
 
 Replaces existing alias text with the specified path.
 
-##### DELETE /v2/function/alias/[Alias name]
+#### DELETE /v2/function/alias/[Alias name]
 
 No parameter is necessary.
 
 Deletes an existing alias.
 
-##### GET|POST|PUT|DELETE /v2/[Alias name]
+#### GET|POST|PUT|DELETE /v2/[Alias name]
 
 API call by the alias name, rather than the associated full API path.
-
 
 
 ## Named pipe API
