@@ -62,7 +62,7 @@ function t_open(path){
 		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
 
 		if( picogw == undefined ){
-			alert('Not connected to the gateway.') ;
+			alert("Not connected to the gateway.\nPlease reload after certain amount of time (10sec or so)") ;
 			return ;
 		}
 		picogw.callproc({
