@@ -4,7 +4,7 @@
   "description": "Minimalist's Home Gateway",
   "main": "main.js",
   "dependencies": {
-    "arped": "^0.2.0",
+    "arped": "file:./local-npm/node-arped",
     "body-parser": "^1.17.2",
     "cryptico": "^1.0.2",
     "echonet-lite": "0.0.19",
