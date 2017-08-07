@@ -2,6 +2,7 @@
 "use strict";
 
 var fs = require('fs');
+let MyLocalStorage = require('../MyLocalStorage.js').MyLocalStorage ;
 
 var globals = {} ;	// VERSION, admin, PubSub
 exports.PluginInterface = class {
@@ -10,60 +11,8 @@ exports.PluginInterface = class {
 	    this.prefix = prefix ;
 	    this.log = (msg) => { console.log(`${this.prefix} plugin> ${msg}`); };
 
-	    const LOCAL_STORAGE_PATH = this.getpath()+'localstorage.json' ;
-	    this.localStorage = {
-	    	clear : function(){ fs.writeFileSync(LOCAL_STORAGE_PATH,'{}') ;}
-	    	, setItem : function(keyName,keyValue){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_STORAGE_PATH).toString()) ;
-	    		} catch(e){}
-	    		st[keyName] = keyValue ;
-    			fs.writeFileSync(LOCAL_STORAGE_PATH,JSON.stringify(st,null,"\t")) ;
-	    	}
-	    	, getItem : function(keyName , defaultValue){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_STORAGE_PATH).toString()) ;
-	    		} catch(e){}
-	    		return st[keyName] == undefined ? defaultValue : st[keyName] ;
-	    	}
-	    	, removeItem : function(keyName){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_STORAGE_PATH).toString()) ;
-	    		} catch(e){}
-	    		delete st[keyName] ;
-    			fs.writeFileSync(LOCAL_STORAGE_PATH,JSON.stringify(st,null,"\t")) ;
-	    	}
-	    } ;
-	    const LOCAL_SETTINGS_PATH = this.getpath()+'settings.json' ;
-	    this.localSettings = {
-	    	clear : function(){ fs.writeFileSync(LOCAL_SETTINGS_PATH,'{}') ;}
-	    	, setItem : function(keyName,keyValue){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
-	    		} catch(e){}
-	    		st[keyName] = keyValue ;
-    			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
-	    	}
-	    	, getItem : function(keyName , defaultValue){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
-	    		} catch(e){}
-	    		return st[keyName] == undefined ? defaultValue : st[keyName] ;
-	    	}
-	    	, removeItem : function(keyName){
-	    		var st = {} ;
-	    		try {
-	    			st = JSON.parse(fs.readFileSync(LOCAL_SETTINGS_PATH).toString()) ;
-	    		} catch(e){}
-	    		delete st[keyName] ;
-    			fs.writeFileSync(LOCAL_SETTINGS_PATH,JSON.stringify(st,null,"\t")) ;
-	    	}
-	    } ;
+	    this.localStorage = new MyLocalStorage(this.getpath()+'localstorage.json') ;
+	    this.localSettings = new MyLocalStorage(this.getpath()+'settings.json') ;
 
 	    //These can return Promise, but never call reject().
 		this.getSettingsSchema = ()=>{ try {

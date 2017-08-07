@@ -152,6 +152,44 @@ will obtain OperatingState of a light and an airconditioner at once. Note that t
 
 PropertyID cannot accept regular expression (because it can easily be many!)
 
+## v2 API
+
+The PicoGW's v2 API, specified by the prefix /v2/, is in an experimental stage. Therefore, continuity of this API is not guaranteed.
+Currently, there is nothing under /v2/ except /v2/function. By calling APIs under /v2/function/, some elements are added under /v2/.
+
+
+### v2 Aliasing API
+
+One or more human readable or shorter name can be assigned to each API path. This functionality is called as 'Aliasing'.
+
+##### GET /v2/function/alias
+
+Shows the list of currently defined aliases
+
+##### POST /v2/function/alias/[Alias name]
+
+Parameter object (specified in body): {"path":"[Associated API path]"}
+
+Defines new alias with the specified path.
+
+##### PUT /v2/function/alias/[Alias name]
+
+Parameter object (specified in body): {"path":"[Associated API path]"}
+
+Replaces existing alias text with the specified path.
+
+##### DELETE /v2/function/alias/[Alias name]
+
+No parameter is necessary.
+
+Deletes an existing alias.
+
+##### GET|POST|PUT|DELETE /v2/[Alias name]
+
+API call by the alias name, rather than the associated full API path.
+
+
+
 ## Named pipe API
 
 Named pipe can be used as a transport of PicoGW API. It is convenient to access PicoGW's functionality within a single machine. To use this API, please first make two named piped files (by the **mkfifo** command), which must have the unique prefix with two kinds of postfices (_r and _w). For example :

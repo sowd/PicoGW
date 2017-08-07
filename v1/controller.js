@@ -11,8 +11,8 @@ var log = console.log ;
 var admin ;
 
 var globals ;
-var Plugins = {} ;//, clientInterface ;
-exports.init = function(_globals,clientFactory){
+var Plugins = {} ;
+exports.init = function(_globals /*,clientFactory*/){
 	globals = _globals ;
 	return new Promise( function(ac,rj){
 		// Scan plugins

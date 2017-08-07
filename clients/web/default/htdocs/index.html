@@ -273,4 +273,16 @@ onload = function(){
 
 
 </script>
+<!-- script>
+// Non-GET method test.
+	$.ajax({
+		type: 'DELETE'
+		,url: '/v2/function/alias/こんにちは/'
+		,data: {path:'/v1/admin'}
+		,success: content=>{
+			alert(JSON.stringify(content,null,'\t')) ;
+		}
+		,error: err=>{ alert(JSON.stringify(err,null,'\t')) ; }
+	});
+</script -->
 </html>

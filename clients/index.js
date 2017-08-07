@@ -16,7 +16,7 @@ exports.clientFactory = function(client_name){
 			return ci[methodname].apply(ci,arguments);
 		} ;
 	}) ;
-	if(client_name==undefined){ return ci ; }
+	if(client_name==undefined){ return Promise.resolve(ci) ; }
 	return new Promise( (ac,rj)=>{
 		try {
 			var cobj = require('./' + client_name + '/index.js') ;
