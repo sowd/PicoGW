@@ -117,14 +117,16 @@ exports.callproc = function(params){
 				}).catch(rj) ;
 				return ;
 			}
-			var terms = procedure.split('/') ;
+			let terms = procedure.split('/') ;
 			while(terms[terms.length-1]=='') terms.pop() ;
-			var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms.slice(2).join('/') ;
+			let pprefix = terms[0] , ppath = terms.slice(1).join('/');//pdevid = terms[1] , ppropname = terms.slice(2).join('/') ;
+			//var pprefix = terms[0] , pdevid = terms[1] , ppropname = terms.slice(2).join('/') ;
 
 			// Update settings.json
 			if( method === 'POST' && Plugins[pprefix] != undefined
-				&& pdevid === 'settings'
-				&& (ppropname == undefined || ppropname == '') ){
+				&& ppath.indexOf('settings')==0 ){
+//				&& pdevid === 'settings'
+//				&& (ppropname == undefined || ppropname == '') ){
 
 				Promise.all([Plugins[pprefix].onSettingsUpdated(args)]).then(re=>{
 					fs.writeFile( Plugins[pprefix].getpath()+'settings.json'
@@ -139,14 +141,11 @@ exports.callproc = function(params){
 			}
 
 
-			if( pdevid != undefined && pdevid.length==0 )		pdevid = undefined ;
-			if( ppropname != undefined && ppropname.length==0 )	ppropname = undefined ;
-			//if( terms.length > 3 && terms[3].length>0)	method = terms[3] ;
-			var proccallback = Plugins[pprefix].procCallback ;
+			let proccallback = Plugins[pprefix].procCallback ;
 			if( typeof proccallback == 'function'){
 
-				var bReplied = false ;
-				Promise.all([proccallback(method.toUpperCase(),pdevid,ppropname,args)])
+				let bReplied = false ;
+				Promise.all([proccallback(method.toUpperCase(),ppath /*pdevid,ppropname*/,args)])
 					.then(re=>{ if( !bReplied ){ bReplied = true ; ac(re[0]); } })
 					.catch(re=>{ if( !bReplied ){ bReplied = true ; rj(re[0]); } }) ;
 				setTimeout(()=>{if( !bReplied ){ bReplied = true ; rj({error:`GET request timeout:${pdevid}/${ppropname}`})}}

@@ -236,10 +236,10 @@ exports.setNetIDCallbacks_Forward = function(plugin_name , callbacks_obj) {
 	netIDCallbacks[plugin_name] = callbacks_obj ;
 } ;
 
-function onProcCall( method , devid , propname , args ){
+function onProcCall( method , path /*devid , propname*/ , args ){
 	switch(method){
 	case 'GET' :
-		return onProcCall_Get( method , devid , propname , args ) ;
+		return onProcCall_Get( method , path /*devid , propname*/ , args ) ;
 	/*case 'POST' :
 		if(devid!='settings' || args == undefined)
 			return {error:'The format is wrong for settings.'} ;
@@ -251,8 +251,12 @@ function onProcCall( method , devid , propname , args ){
 	return {error:`The specified method ${method} is not implemented in admin plugin.`} ;
 }
 
-function onProcCall_Get( method , serviceid , propname , args ){
-	if( serviceid == undefined ){	// access 'admin/' => service list
+function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
+	let path_split = path.split('/') ;
+	const serviceid = path_split.shift() ;
+	const propname = path_split.join('/') ;
+
+	if( serviceid == '' ){	// access 'admin/' => service list
 		var re = { net:{} } ;
 		var macs = ipv4.getmacs() ;
 		for( var mac in macs )
@@ -264,7 +268,7 @@ function onProcCall_Get( method , serviceid , propname , args ){
 		return re ;
 	}
 
-	if( propname == undefined ){	// access 'admin/serviceid/' => property list
+	if( propname == '' ){	// access 'admin/serviceid/' => property list
 		var ret ;
 		switch(serviceid){
 			case 'net' :

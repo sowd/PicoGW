@@ -499,8 +499,12 @@ function sendFrame( ip, tid, seoj, deoj, esv, properties ){
 ///
 
 
-function onProcCall( method , _devid , propname , args ){
-	if( _devid == undefined || propname == undefined ){
+function onProcCall( method , path /*_devid , propname*/ , args ){
+	let path_split = path.split('/') ;
+	const _devid = path_split.shift() ;
+	const propname = path_split.join('/') ;
+
+	if( _devid == '' || propname == '' ){
 		switch(method){
 		case 'GET' :
 			return onProcCall_Get( method , _devid , propname , args ) ;
@@ -548,7 +552,7 @@ function onProcCall( method , _devid , propname , args ){
 }
 
 function onProcCall_Get( method , devid , propname , args ){
-	if( devid == undefined ){	// access 'echonet/' => device list
+	if( devid == '' ){	// access 'echonet/' => device list
 		var devices = {} ;
 		for( var mac in macs ){
 			for( var devid in macs[mac].devices ){
@@ -572,7 +576,7 @@ function onProcCall_Get( method , devid , propname , args ){
 		return devices ;
 	}
 
-	if( propname == undefined ){	// access 'echonet/devid/' => property list
+	if( propname == '' ){	// access 'echonet/devid/' => property list
 		// Ideally, property map should be checked.
 		var mac = getMacFromDeviceId(devid) ;
 		if( mac == undefined )	return {error:'No such device:'+devid} ;
@@ -686,7 +690,7 @@ function onProcCall_Get( method , devid , propname , args ){
 }
 
 function onProcCall_Put( method , devid , propname , args ){
-	if( devid == undefined || propname == undefined || args==undefined || args.value==undefined)
+	if( devid == '' || propname == '' || args==undefined || args.value==undefined)
 		return {error:`Device id, property name, and the argument "value" must be provided for ${method} method.`} ;
 
 	var mac = getMacFromDeviceId(devid) ;
