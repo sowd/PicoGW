@@ -148,7 +148,7 @@ exports.callproc = function(params){
 				Promise.all([proccallback(method.toUpperCase(),ppath /*pdevid,ppropname*/,args)])
 					.then(re=>{ if( !bReplied ){ bReplied = true ; ac(re[0]); } })
 					.catch(re=>{ if( !bReplied ){ bReplied = true ; rj(re[0]); } }) ;
-				setTimeout(()=>{if( !bReplied ){ bReplied = true ; rj({error:`GET request timeout:${pdevid}/${ppropname}`})}}
+				setTimeout(()=>{if( !bReplied ){ bReplied = true ; rj({error:`GET request timeout:${ppath}`})}}
 					,CALL_TIMEOUT) ;
 			} else rj('Procedure callback is not defined for the plugin '+pprefix) ;
 		} catch(e){
