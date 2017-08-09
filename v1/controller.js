@@ -102,7 +102,7 @@ exports.callproc = function(params){
 						prms_prfx.push(prfx) ;
 						ps[prfx].option = {
 							leaf:false
-							,doc:{short:'Plugin'}
+							//,doc:{short:'Plugin'}
 							//,settings_schema : .. , settings : .. (set later)
 						} ;
 					}

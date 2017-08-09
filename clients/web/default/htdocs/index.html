@@ -81,10 +81,13 @@ function t_open(path){
 				try {
 					var opt = json[dk].option ;
 					node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
-					if( opt.doc.short != undefined ) txt += ' (' + opt.doc.short +')' ;
-					longdoc = opt.doc.long ;
-					/*if( longdoc != undefined)
-						node_properties[next_path_id].longdoc = longdoc ;*/
+					if( opt.doc != undefined ){
+						if( opt.doc.short != undefined )
+							txt += ' (' + opt.doc.short +')' ;
+						longdoc = opt.doc.long ;
+						/*if( longdoc != undefined)
+							node_properties[next_path_id].longdoc = longdoc ;*/
+					}
 					if( node_properties[next_path_id].settings_schema = opt.settings_schema )
 						txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
 					node_properties[next_path_id].settings = opt.settings ;
