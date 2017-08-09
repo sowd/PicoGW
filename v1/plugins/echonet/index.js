@@ -151,8 +151,10 @@ exports.init = function(pi /*,globals*/){
 		for( let oeoj in ELDB ){
 			if( oeoj == '0000' ) continue ;
 			for( let sepc in sepcs )
-				if( ELDB[oeoj].epcs[sepc] == undefined)
+				if( ELDB[oeoj].epcs[sepc] == undefined )
 					ELDB[oeoj].epcs[sepc] = sepcs[sepc] ;
+				else if(ELDB[oeoj].epcs[sepc].edtConvFuncs == undefined )
+					ELDB[oeoj].epcs[sepc].edtConvFuncs = sepcs[sepc].edtConvFuncs ;
 		}
 	}
 	// fs.writeFileSync(pluginInterface.getpath()+'minimized.json',JSON.stringify(ELDB ,null,"\t")) ;
@@ -242,14 +244,12 @@ exports.init = function(pi /*,globals*/){
 							if( epco.edtConvFuncs != undefined )	edtConvFunc = epco.edtConvFuncs[0] ;
 						}
 					}*/
-					if( ELDB[seoj] != undefined )
-						epco = ELDB[seoj].epcs[epc] ;
-					else
-						epco = ELDB['0000'].epcs[epc] ;
-						if( epco != undefined ){
-							if( epco.epcType != undefined )			epcType = epco.epcType ;
-							if( epco.edtConvFuncs != undefined )	edtConvFunc = epco.edtConvFuncs[0] ;
-						}
+					if( ELDB[seoj] != undefined )	epco = ELDB[seoj].epcs[epc] ;
+					else							epco = ELDB['0000'].epcs[epc] ;
+					if( epco != undefined ){
+						if( epco.epcType != undefined )			epcType = epco.epcType ;
+						if( epco.edtConvFuncs != undefined )	edtConvFunc = epco.edtConvFuncs[0] ;
+					}
 					//}
 
 					if(epcType == undefined)	epcType = epc ;
@@ -286,8 +286,8 @@ exports.init = function(pi /*,globals*/){
 					if( els.ESV == '71' ){	// accepted
 						var epc_hex = els.DETAIL.slice(0,2) ;
 						let epco ;
-						if( ELDB[seoj] == undefined ) epco = ELDB['0000'].epcs[epc_hex] ;
-						else epco = ELDB[seoj].epcs[epc_hex] ;
+						if( ELDB[seoj] == undefined )	epco = ELDB['0000'].epcs[epc_hex] ;
+						else 							epco = ELDB[seoj].epcs[epc_hex] ;
 						var ret = {epc:parseInt('0x'+epc_hex) , epcName : epco.epcName , success:'SetC request accepted.'} ;
 						var cache = tgt[epco.epcType] ;
 						if( cache.cache ){
