@@ -3,7 +3,7 @@
 A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports ECHONET Lite. The license is MIT.
 The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
-## Installation & Running
+# Installation & Running
 
 **Check your node.js version**
 
@@ -68,11 +68,11 @@ $ echo '{"makercode":1234}' > v1/plugins/echonet/localstorage.json
 
 + Even if your Linux has multiple network interfaces, ECHONET Lite communication is available for only one of them. It is because [NetworkManager](https://wiki.gnome.org/Projects/NetworkManager) (the tool we use to setup network configuration) sets only one default gateway (which is used for ECHONET Lite multicasting) per machine. By default, NetworkManager sets wired Ethernet as the default gateway network interface. If no wired ethernet connection is available, wlan0 (or other wireless network) will become the default.
 
-## Web API
+# Web API
 
 The Web API hosted by PicoGW is a developing version of [Housing API by Daiwa House Industry.](http://www.daiwahouse.co.jp/lab/HousingAPI/) The API design is mainly done by [Shigeru Owada@Kanagawa Instuitute of Technology](https://github.com/sowd). If you have any criticisms, requests, or questions, please feel free to post your opinion to the [Issues page](https://github.com/KAIT-HEMS/PicoGW/issues).
 
-### Design concept
+## Design concept
 
 The concept of this API is as follows:
 
@@ -80,18 +80,20 @@ The concept of this API is as follows:
 2. **Extensible**. The API should support the forthcoming IoT devices without drastically changing the basic calling styles. We adopt plugin architecture to achieve this.
 3. **Maximize the merit for residents**. Most home gateway system are developed by home appliances companies. PicoGW should be independent from the pressure from such industry and conservatively implement really necessary, minimal functionalities.
 
-### Calling convention
+## Calling convention
 
 The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. All APIs exist under **/v1/** (The root **/** access shows the control panel.)
 You can always write the API code in the URL field of your browser (HTTP GET access). 
 
-### API directory
+# API directory
 
 The API has a directory structure as follows. The directories right under root (admin / echonet) are the name of plugins. This can increase if new plugin is added to the system.
 
 ![](res/DirStructure.png)
 
 The structures under a plugin name is a responsibility of the plugin. However, each subdirectory API follows the rule that the resulting JSON object contains further subdirectory name or leaf node name (which is associated with a function).
+
+## Admin Plugin
 
 ### GET /v1/admin
 
@@ -109,6 +111,8 @@ Currently, logging schedule is written directly into the source code (**v1/plugi
 The network object in the admin plugin.
 
 This object monitors ARP table and associates IP address with the MAC address to detact change of IP address. PicoGW currently only support IPv4 network. Internally, the detected MAC address is exposed to other plugin to trace devices.
+
+## ECHONET Lite Plugin
 
 ### GET /v1/echonet
 This path is the ECHONET Lite plugin root.
@@ -152,13 +156,39 @@ will obtain OperatingState of a light and an airconditioner at once. Note that t
 
 PropertyID cannot accept regular expression (because it can easily be many!)
 
-## v2 API
+## Database Plugin
+
+Database plugin provides an API for simple key-value database within GW.
+The (arbitrary ) path becomes the key of the data.
+Also, the source code of database plugin is a good example of basic plugin implementation. If you want to develop your own plugin, please refer to v1/plugins/db/index.js.
+
+#### GET /v1/db
+
+List of all stored keys.
+
+#### GET /v1/db/[PATH_AS_A_KEY]
+
+returns the stored value.
+
+#### PUT|POST /v1/db/[PATH_AS_A_KEY]
+
+Stores a value (specified in the body). The value should be in JSON format. It is stringified before stored. The written value is published from the specified path using PubSub.
+
+#### DELETE /v1/db/[PATH_AS_A_KEY]
+
+Deletes the key and the corresponding data. Publishes {}.
+
+#### DELETE /v1/db
+
+Deletes all data. (/v1/db path remains.)
+
+# v2 API
 
 The PicoGW's v2 API, specified by the prefix /v2/, is in an experimental stage. Therefore, continuity of this API is not guaranteed.
 Currently, there is nothing under /v2/ except /v2/function. By calling APIs under /v2/function/, some elements are added under /v2/.
 
 
-### v2 Aliasing API
+## v2 Aliasing API
 
 One or more human readable or shorter name can be assigned to each API path. This functionality is called as 'Aliasing'.
 
@@ -166,25 +196,25 @@ One or more human readable or shorter name can be assigned to each API path. Thi
 
 Shows the list of currently defined aliases
 
-#### POST /v2/function/alias/[Alias name]
+#### POST /v2/function/alias/[ALIAS_NAME]
 
 Parameter object (specified in body): {"path":"[Associated API path]"}
 
 Defines new alias with the specified path.
 
-#### PUT /v2/function/alias/[Alias name]
+#### PUT /v2/function/alias/[ALIAS_NAME]
 
 Parameter object (specified in body): {"path":"[Associated API path]"}
 
 Replaces existing alias text with the specified path.
 
-#### DELETE /v2/function/alias/[Alias name]
+#### DELETE /v2/function/alias/[ALIAS_NAME]
 
 No parameter is necessary.
 
 Deletes an existing alias.
 
-#### GET|POST|PUT|DELETE /v2/[Alias name]
+#### GET|POST|PUT|DELETE /v2/[ALIAS_NAME]
 
 API call by the alias name, rather than the associated full API path.
 
