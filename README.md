@@ -277,10 +277,14 @@ Then a value change is asynchronously notified by a PUB JSON object.
 [body-parser](https://www.npmjs.com/package/body-parser)  
 [echonet-lite](https://www.npmjs.com/package/echonet-lite)  
 [express](https://www.npmjs.com/package/express)  
+[inpath](https://www.npmjs.com/package/inpath)  
 [ipmask](https://www.npmjs.com/package/ipmask)  
 [mime](https://www.npmjs.com/package/mime)  
+[node-localstorage](https://www.npmjs.com/package/node-localstorage)  
 [opts](https://www.npmjs.com/package/opts)  
+[pidof](https://www.npmjs.com/package/pidof)  
 [ping](https://www.npmjs.com/package/ping)  
+[read](https://www.npmjs.com/package/read)  
 [sudo](https://github.com/calmh/node-sudo)  
 
 #### Apache 2
