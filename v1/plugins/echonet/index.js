@@ -234,27 +234,29 @@ exports.init = function(pi /*,globals*/){
 				var tgt = (seoj=='0ef0' ? mm.nodeprofile : mm.devices[ mm.eoj_id_map[els.SEOJ] ]) ;
 				for( var epc in epcList ) {
 
-					var epco = undefined , epcType = undefined , edtConvFunc = undefined ;
-					if( seoj != '0ef0'){
+					let epco = undefined , epcType = undefined , edtConvFunc = undefined ;
+					/*if( seoj != '0ef0'){
 						epco = ELDB['0000'].epcs[epc] ;
 						if( epco != undefined ){
 							epcType = epco.epcType ;
 							if( epco.edtConvFuncs != undefined )	edtConvFunc = epco.edtConvFuncs[0] ;
 						}
-					}
-					if( ELDB[seoj] != undefined ){
+					}*/
+					if( ELDB[seoj] != undefined )
 						epco = ELDB[seoj].epcs[epc] ;
+					else
+						epco = ELDB['0000'].epcs[epc] ;
 						if( epco != undefined ){
 							if( epco.epcType != undefined )			epcType = epco.epcType ;
 							if( epco.edtConvFuncs != undefined )	edtConvFunc = epco.edtConvFuncs[0] ;
 						}
-					}
+					//}
 
 					if(epcType == undefined)	epcType = epc ;
 					if( epcList[epc]=='')	continue ;
 
-					var edt = epcList[epc] = EL.toHexArray(epcList[epc]) ;
-					var bEdtUpdated = (tgt[epcType]==undefined || JSON.stringify(tgt[epcType].cache) !== JSON.stringify(edt)) ;
+					let edt = epcList[epc] = EL.toHexArray(epcList[epc]) ;
+					let bEdtUpdated = (tgt[epcType]==undefined || JSON.stringify(tgt[epcType].cache) !== JSON.stringify(edt)) ;
 					if(bEdtUpdated)		tgt[epcType] = { cache : edt , timestamp : Date.now() } ;
 					else 				tgt[epcType].timestamp = Date.now() ;
 
@@ -283,12 +285,14 @@ exports.init = function(pi /*,globals*/){
 				if( procCallWaitList[els.TID] != undefined ){
 					if( els.ESV == '71' ){	// accepted
 						var epc_hex = els.DETAIL.slice(0,2) ;
-						var epco = ELDB[seoj].epcs[epc_hex] ;
+						let epco ;
+						if( ELDB[seoj] == undefined ) epco = ELDB['0000'].epcs[epc_hex] ;
+						else epco = ELDB[seoj].epcs[epc_hex] ;
 						var ret = {epc:parseInt('0x'+epc_hex) , epcName : epco.epcName , success:'SetC request accepted.'} ;
 						var cache = tgt[epco.epcType] ;
 						if( cache.cache ){
 							ret.cache_edt = cache.cache ; ret.cache_timestamp = cache.timestamp ;
-							var convfuncs = epco.edtConvFuncs || ELDB['0000'].epcs[epc_hex].edtConvFuncs ;
+							var convfuncs = epco.edtConvFuncs ;//|| ELDB['0000'].epcs[epc_hex].edtConvFuncs ;
 							if( convfuncs != undefined )
 								ret.cache_value = convfuncs[0](cache.cache) ;
 						}
