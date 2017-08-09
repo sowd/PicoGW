@@ -27,8 +27,11 @@ function onProcCall( method , path , args ){
 					fs.readdir( DATAPATH, (err, files) => {
 						re = {} ;
 						files.forEach(fname => {
-							let fo = fs.lstatSync(`${DATAPATH}/${fname}`) ;
-							if( fo.isDirectory() ) return ;
+							try {
+								let fo = fs.lstatSync(`${DATAPATH}/${fname}`) ;
+								if( fo.isDirectory() ) return ;
+							} catch(e){ return ; }
+
 							let fname_mid = decodeURIComponent(fname) ;
 							fname = decodeURIComponent(fname_mid) ;
 							re[fname] = {} ;
