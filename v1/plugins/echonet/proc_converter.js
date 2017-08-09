@@ -87,4 +87,14 @@ exports.eojs = {
 			}
 			]
 	}
+
+	,'05ff':{	// Controller class
+		'c8': [ x=>String.fromCharCode.apply(String,x)					// ManagementEquipmentProductCode
+			, x=>{
+				let re=[];
+				for( let i=0;i<x.length;++i ){re.push(x.charCodeAt(i));}
+				while(re.length<12){re.push(0);}
+				return re ;
+			} ]
+	}
 } ;
