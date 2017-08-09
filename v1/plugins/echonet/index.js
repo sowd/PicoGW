@@ -107,6 +107,7 @@ exports.init = function(pi /*,globals*/){
 		}
 		,onIPAddressChangedCallback : function(id,oldip,newip){
 		 	//log('onIPAddressChangedCallback:'+JSON.stringify(arguments)) ;
+		 	EL.sendOPC1( EL.EL_Multi, [0x0e,0xf0,0x01], [0x0e,0xf0,0x01], 0x73, 0xd5, EL.Node_details["d5"] );
 		}
 	}) ;
 

@@ -196,7 +196,11 @@ exports.init = function(pi){
 
 			const ignore_error_cmds = ['delete','down' /*,'up'*/] ;
 			function ex(){
-				if( commands.length==0 ) return ;
+				if( commands.length==0 ){
+					ipv4.refreshMyAddress() ;
+					ac() ;
+					return ;
+				}
 				let cmd = commands.shift() ;
 				//log('Exec:'+cmd.join(" ")) ;
 				let child = sudo(cmd,{password:root_pwd}) ;
@@ -207,8 +211,11 @@ exports.init = function(pi){
 					commands = [] ;
 				}) ;
 				child.stdout.on('close',()=>{
-					if( commands.length == 0 ) ac() ;
-					else ex() ;
+					if( commands.length == 0 ){
+						ipv4.refreshMyAddress() ;
+						ac() ;
+						return ;
+					} else ex() ;
 				}) ;
 			}
 			ex() ;

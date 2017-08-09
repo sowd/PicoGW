@@ -19,9 +19,6 @@ var arped = require('arped');
 var ping = require('ping');
 var os = require('os');
 
-var mynetinfo = myAddresses() ;	// updated on all ping timing
-console.log('Network info:'+JSON.stringify(mynetinfo)) ;
-
 // ID == mac address
 var onIPMacFoundCallback = {} ;
 exports.getNetIDFromIPv4Address = function(ip){
@@ -85,9 +82,6 @@ exports.setNetCallbackFunctions = function(
 			onIPAddressChangedCallback		= _onIPAddressChangedCallback ;
 } ;
 
-exports.getmacs = ()=>macs ;
-
-
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //  Return my network interfaces
@@ -101,11 +95,30 @@ function myAddresses(){
 	}
 	return ret ;
 }
+exports.refreshMyAddress = ()=>{
+	mynetinfo = myAddresses() ;	// updated on all ping timing
+	for( const iface of mynetinfo ){
+		if( macs[iface.mac].log[0].ip == iface.address )
+			macs[iface.mac].log[0].timestamp = Date.now() ;
+		else {
+			let oldip = macs[iface.mac].log[0].ip ;
+			macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;
+			onIPAddressChangedCallback( iface.mac , oldip , iface.address ) ;
+
+		}
+	}
+}
+
+var mynetinfo = myAddresses() ;	// updated on all ping timing
+console.log('Network info:'+JSON.stringify(mynetinfo)) ;
+
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
 //  Check arp table and update macs
 var macs = {} ;
+exports.getmacs = ()=>macs ;
+
 for( const iface of mynetinfo ){
 	macs[iface.mac] = {active:true, localhost:true, log: [ {ip:iface.address,timestamp:Date.now()} ]} ;
 }
@@ -121,6 +134,7 @@ function deactivatemacbyip(ip){
 	}
 	return prev_actives ;
 }
+
 
 var arptxt = '' ;
 function chkArpTable(){
@@ -207,12 +221,13 @@ function ping_all(){
 
 	if( COMPLETE_IP_SCAN ){
 		// add unknown ip address to ping list
-		mynetinfo = myAddresses() ;
+		//mynetinfo = myAddresses() ;
+		exports.refreshMyAddress() ;
 		for( const iface of mynetinfo ){
-			if( macs[iface.mac].log[0].ip == iface.address )
+			/*if( macs[iface.mac].log[0].ip == iface.address )
 				macs[iface.mac].log[0].timestamp = Date.now() ;
 			else
-				macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;
+				macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;*/
 
 			var mask = 0 , subnet = 0 ;
 			iface.netmask.split('.').forEach( b => {
@@ -252,5 +267,11 @@ function ping_all(){
 	setTimeout(ping_all,PING_INTERVAL) ;
 }
 
-setInterval(chkArpTable,CHECK_ARP_TABLE_INTERVAL) ;
+setInterval(
+	()=>{
+		exports.refreshMyAddress();
+		chkArpTable();
+	}
+	,CHECK_ARP_TABLE_INTERVAL
+) ;
 ping_all() ;
