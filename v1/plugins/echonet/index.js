@@ -111,12 +111,10 @@ exports.init = function(pi /*,globals*/){
 	}) ;
 
 	// Initialize echonet lite
-	{
-		const es_prop_preset = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'controller_properties.json','utf-8')) ;
-		for( let epc in es_prop_preset )
-			EL.Node_details[epc] = es_prop_preset[epc] ;
-			//EL.Node_details['8a'][2] = MAKER_CODE ;
-	}
+	const MY_PROPS = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'controller_properties.json','utf-8')) ;
+	// Copy maker code to node profile
+	if( MY_PROPS['8a'] != undefined )
+		EL.Node_details['8a'] = MY_PROPS['8a'] ;
 
 	// Construct ELDB
 	// Load database with minimization / resource embedding
@@ -319,8 +317,8 @@ exports.init = function(pi /*,globals*/){
 			let esv = EL.GET_RES ;
 			const props = parseEDTs(els) ;
 			for( let prop of props ){
-				if( EL.Node_details[prop.epc] )
-					prop.edt = EL.Node_details[prop.epc] ;
+				if( MY_PROPS[prop.epc] )
+					prop.edt = MY_PROPS[prop.epc] ;
 				else
 					esv = EL.GET_SNA ;
 				if( prop.edt == null || prop.edt.length == 0 )
