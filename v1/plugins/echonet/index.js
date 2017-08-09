@@ -11,9 +11,9 @@ const DEVICE_MULTICAST_INTERVAL = 60*1000 ;
 
 var VERSION = 'v1';
 
-// If you add 'makercode' entry to localstorage.json (as a number), the number is
+/*// If you add 'makercode' entry to localstorage.json (as a number), the number is
 // loaded to this MAKER_CODE variable.
-var MAKER_CODE = 0 ;
+var MAKER_CODE = 0 ;*/
 
 var fs = require('fs');
 var EL = require('echonet-lite');
@@ -87,7 +87,7 @@ exports.init = function(pi /*,globals*/){
 	log = pluginInterface.log ;
 	localStorage = pluginInterface.localStorage ;
 	macs = localStorage.getItem('macs',{}) ;
-	MAKER_CODE = localStorage.getItem('makercode',MAKER_CODE) ;
+	//MAKER_CODE = localStorage.getItem('makercode',MAKER_CODE) ;
 
 	// Reset states
 	for( var mac in macs ){
@@ -111,21 +111,26 @@ exports.init = function(pi /*,globals*/){
 	}) ;
 
 	// Initialize echonet lite
-	EL.Node_details['8a'][2] = MAKER_CODE ;
+	{
+		const es_prop_preset = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'controller_properties.json','utf-8')) ;
+		for( let epc in es_prop_preset )
+			EL.Node_details[epc] = es_prop_preset[epc] ;
+			//EL.Node_details['8a'][2] = MAKER_CODE ;
+	}
 
 	// Construct ELDB
 	// Load database with minimization / resource embedding
 	{
-		var data = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'all_Body.json','utf-8')) ;
-		var names = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'all_'+LOCALE+'.json','utf-8')).names ;
-		for( var objname in data.elObjects ){
-			var objnamelc = objname.substring(2).toLowerCase() ;
-			var eoj = data.elObjects[objname] ;
-			var minimize_obj
+		let data = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'all_Body.json','utf-8')) ;
+		let names = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'all_'+LOCALE+'.json','utf-8')).names ;
+		for( let objname in data.elObjects ){
+			let objnamelc = objname.substring(2).toLowerCase() ;
+			let eoj = data.elObjects[objname] ;
+			let minimize_obj
 				= {objectType:eoj.objectType , objectName:names[eoj.objectName] , epcs:{}} ;
 
-			for( var epcname in eoj.epcs ){
-				var edtconvs = undefined ;
+			for( let epcname in eoj.epcs ){
+				let edtconvs = undefined ;
 				try {
 					edtconvs = ProcConverter.eojs[objnamelc][epcname.substring(2).toLowerCase()] ;
 				} catch(e){}
@@ -140,6 +145,17 @@ exports.init = function(pi /*,globals*/){
 		}
 		delete data ;
 		delete names ;
+
+		// add superclass epcs to subclasses
+		let sepcs = ELDB['0000'].epcs ;
+		for( let sepc in sepcs )	sepcs[sepc].super = true ;
+
+		for( let oeoj in ELDB ){
+			if( oeoj == '0000' ) continue ;
+			for( let sepc in sepcs )
+				if( ELDB[oeoj].epcs[sepc] == undefined)
+					ELDB[oeoj].epcs[sepc] = sepcs[sepc] ;
+		}
 	}
 	// fs.writeFileSync(pluginInterface.getpath()+'minimized.json',JSON.stringify(ELDB ,null,"\t")) ;
 
@@ -520,7 +536,7 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 	case 'GET' :
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
-					onProcCall_Get( method , devid , propname , args )
+					Promise.all([onProcCall_Get( method , devid , propname , args )])
 						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
@@ -590,7 +606,7 @@ function onProcCall_Get( method , devid , propname , args ){
 
 		var re = {} ;
 		var cache_edt, cache_value, cacheStr , cache_timestamp ;
-		// Super class
+		/*// Super class
 		if( eoj != '0ef0'){
 			for( var epc in ELDB['0000'].epcs ){
 				var epco = ELDB['0000'].epcs[epc] ;
@@ -624,7 +640,7 @@ function onProcCall_Get( method , devid , propname , args ){
 					}
 				}
 			}
-		}
+		}*/
 
 
 		for( var epc in ELDB[eoj].epcs ){
@@ -641,7 +657,7 @@ function onProcCall_Get( method , devid , propname , args ){
 			} else if(re[epcType]!=undefined )
 				cache_value = re[epcType].cache_value ;
 			re[epcType] = {
-				super : false
+				super : (epco.super === true)
 				, epc : parseInt('0x'+epc)
 				, cache_edt : cache_edt , cache_value : cache_value , cache_timestamp : cache_timestamp
 				, epcName : epco.epcName

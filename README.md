@@ -60,9 +60,7 @@ $ node main.js -p 12345
 
 **Changing the maker code**
 
-```bash
-$ echo '{"makercode":1234}' > v1/plugins/echonet/localstorage.json
-```
+Change v1/plugins/echonet/controller_properties.json's "8a" value.
 
 ## Remarks
 
