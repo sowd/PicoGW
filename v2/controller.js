@@ -2,7 +2,7 @@
 
 const VERSION = 'v2';
 
-let MyLocalStorage = require('../MyLocalStorage.js').MyLocalStorage ;
+let SingleFileLocalStorage = require('../MyLocalStorage.js').SingleFileLocalStorage ;
 
 let globals,client ;
 
@@ -42,7 +42,7 @@ exports.callproc = function(params){
 
 const MYPATH = __filename.split('/').slice(0,-1).join('/')+'/' ;
 const LOCAL_STORAGE_PATH = MYPATH+'localstorage.json' ;
-let localStorage = new MyLocalStorage(LOCAL_STORAGE_PATH) ;
+let localStorage = new SingleFileLocalStorage(LOCAL_STORAGE_PATH) ;
 
 const SPECIAL_PATHS = {
 	'function/alias' : params => {

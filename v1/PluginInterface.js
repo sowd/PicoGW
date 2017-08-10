@@ -2,7 +2,7 @@
 "use strict";
 
 var fs = require('fs');
-let MyLocalStorage = require('../MyLocalStorage.js').MyLocalStorage ;
+let SingleFileLocalStorage = require('../MyLocalStorage.js').SingleFileLocalStorage ;
 
 var globals = {} ;	// VERSION, admin, PubSub
 exports.PluginInterface = class {
@@ -11,8 +11,8 @@ exports.PluginInterface = class {
 	    this.prefix = prefix ;
 	    this.log = (msg) => { console.log(`${this.prefix} plugin> ${msg}`); };
 
-	    this.localStorage = new MyLocalStorage(this.getpath()+'localstorage.json') ;
-	    this.localSettings = new MyLocalStorage(this.getpath()+'settings.json') ;
+	    this.localStorage = new SingleFileLocalStorage(this.getpath()+'localstorage.json') ;
+	    this.localSettings = new SingleFileLocalStorage(this.getpath()+'settings.json') ;
 
 	    //These can return Promise, but never call reject().
 		this.getSettingsSchema = ()=>{ try {

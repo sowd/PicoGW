@@ -110,7 +110,7 @@ function connectws(onconnect_func /* can be called multiple times */){
     	waitlist = {} ;
     	sublist = {} ;
     	picogw = undefined ;
-		console.error('Websocket disconnected. Retrying in 3 secs.') ;
+		console.log('Websocket disconnected. Retrying in 3 secs.') ;
 		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
 	}
 } ;
