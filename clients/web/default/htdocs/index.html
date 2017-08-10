@@ -62,10 +62,8 @@ function t_open(path){
 	return new Promise( (ac,rj)=>{
 		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
 
-		if( picogw == undefined ){
-			// alert("Not connected to the gateway.\nPlease reload after certain amount of time (10sec or so)") ;
+		if( picogw == undefined )
 			return ;
-		}
 		picogw.callproc({
 			method:'GET'
 			,path:API_PREFIX+path_real
@@ -121,7 +119,6 @@ onload = function(){
 	connectws(()=>{
 		if( bInitialized ) return ;
 		bInitialized = true ;
-		//console.log('Connected to the gateway.') ;
 
 		// When selected
 		res_tree.on('changed.jstree', function (e, data) {
