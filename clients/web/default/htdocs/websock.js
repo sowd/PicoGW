@@ -31,13 +31,14 @@ Unsubscribe:
 let picogw ;
 
 function connectws(onconnect_func /* can be called multiple times */){
+    console.log('Trying to connect to '+location.host+'...') ;
 	start_spinner();
 
     let connection = new WebSocket('ws://'+location.host ,['picogw']);
+
     let tid = 0 ;
     let waitlist = {} ;
     let sublist = {} ;
-    console.log('Trying to connect to '+location.host+'...') ;
 	connection.onopen = function () {
 		picogw = {
 			callproc : args=>{
@@ -77,6 +78,7 @@ function connectws(onconnect_func /* can be called multiple times */){
 			}
 		}
 		stop_spinner();
+	    console.log('Connected to '+location.host+'.') ;
 		onconnect_func() ;
 	};
 	connection.onmessage = function (e) {
@@ -98,9 +100,9 @@ function connectws(onconnect_func /* can be called multiple times */){
 		}
 	};
 
-	connection.onerror = function(){
+	/*connection.onerror = function(){
 		start_spinner();
-	} ;
+	} ;*/
 	connection.onclose = function(){
 		start_spinner();
 		for( let tid in waitlist )
@@ -115,13 +117,9 @@ function connectws(onconnect_func /* can be called multiple times */){
 
 let spinner ;
 function start_spinner(){
-	if( spinner != undefined ){
-		console.log('Still connecting..') ;
-		return false ;
-	}
+	if( spinner != undefined ) return ;
 	spinner = new Spinner().spin() ;
 	document.getElementsByTagName('body')[0].appendChild(spinner.el);
-	return true ;
 }
 function stop_spinner(){
 	if( spinner == undefined ) return ;
