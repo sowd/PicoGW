@@ -302,7 +302,10 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 			case 'server_status' :
 				return new Promise((ac,rj)=>{
 					exec('vmstat', (err, stdout, stderr) => {
-						if( stdout !== null )
+
+						if( err )
+							ac({error:'Command execution failed.',result:err}) ;
+						else if( stdout !== null )
 							ac({success:true,result:stdout.split('\n')}) ;
 						else 
 							ac({error:'Command execution failed.',result:stderr}) ;
