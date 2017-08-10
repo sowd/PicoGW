@@ -80,7 +80,7 @@ The concept of this API is as follows:
 
 ## Calling convention
 
-The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. All APIs exist under **/v1/** (The root **/** access shows the control panel.)
+The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. Most APIs exist under **/v1/** (The root **/** access shows the control panel.)
 You can always write the API code in the URL field of your browser (HTTP GET access). 
 
 # API directory
@@ -95,20 +95,17 @@ The structures under a plugin name is a responsibility of the plugin. However, e
 
 ### GET /v1/admin
 
-Admin plugin root.
-The admin plugin is responsible to logging to network management.
-
-#### GET /v1/admin/log
-
-The log object in the admin plugin.
-
-Currently, logging schedule is written directly into the source code (**v1/plugins/admin/logger.js**), it should be changed through control panel GUI. The properties under this directory is read only.
+Admin plugin root. Currently, the admin plugin is responsible to network and server management.
 
 #### GET /v1/admin/net
 
 The network object in the admin plugin.
 
 This object monitors ARP table and associates IP address with the MAC address to detact change of IP address. PicoGW currently only support IPv4 network. Internally, the detected MAC address is exposed to other plugin to trace devices.
+
+#### GET /v1/admin/server_status
+
+Runs 'vmstat' command to monitor server memory and other statuses.
 
 ## ECHONET Lite Plugin
 

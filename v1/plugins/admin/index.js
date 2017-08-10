@@ -264,13 +264,15 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 	const propname = path_split.join('/') ;
 
 	if( serviceid == '' ){	// access 'admin/' => service list
-		var re = { net:{} } ;
+		var re = { net:{} , server_status:{}} ;
 		var macs = ipv4.getmacs() ;
 		for( var mac in macs )
 			re.net[mac] = macs[mac].active ;
 
-		if( args.option === 'true' )
+		if( args.option === 'true' ){
 			re.net.option={leaf:false,doc:{short:'Mac address of recognized network peers'}} ;
+			re.server_status.option={leaf:true,doc:{short:'Check server memory/swap status'}} ;
+		}
 
 		return re ;
 	}
@@ -297,6 +299,16 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 					}
 				}
 				return ret ;
+			case 'server_status' :
+				return new Promise((ac,rj)=>{
+					exec('vmstat', (err, stdout, stderr) => {
+						if( stdout !== null )
+							ac({success:true,result:stdout.split('\n')}) ;
+						else 
+							ac({error:'Command execution failed.',result:stderr}) ;
+					}) ;
+
+				}) ;
 		}
 		return {error:'No such service:'+serviceid} ;
 	}
