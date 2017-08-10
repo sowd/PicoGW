@@ -28,10 +28,10 @@ Unsubscribe:
 	picogw.unsub('/v1/echonet/GenericIllumination_1/OperatingState/',func);
 */
 
-
 let picogw ;
+
 function connectws(onconnect_func /* can be called multiple times */){
-	start_spinner() ;
+	start_spinner();
 
     let connection = new WebSocket('ws://'+location.host ,['picogw']);
     let tid = 0 ;
@@ -76,7 +76,7 @@ function connectws(onconnect_func /* can be called multiple times */){
 				}
 			}
 		}
-		stop_spinner() ;
+		stop_spinner();
 		onconnect_func() ;
 	};
 	connection.onmessage = function (e) {
@@ -102,13 +102,13 @@ function connectws(onconnect_func /* can be called multiple times */){
 		start_spinner();
 	} ;
 	connection.onclose = function(){
+		start_spinner();
 		for( let tid in waitlist )
 			waitlist[tid][1]({error:'Connection closed.'}) ;
     	waitlist = {} ;
     	sublist = {} ;
     	picogw = undefined ;
 		console.error('Websocket disconnected. Retrying in 3 secs.') ;
-		start_spinner();
 		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
 	}
 } ;

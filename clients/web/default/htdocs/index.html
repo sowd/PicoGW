@@ -115,144 +115,149 @@ function t_open(path){
 	}) ;
 }
 
+let bInitialized = false ;
+
 onload = function(){
 	connectws(()=>{
-		stop_spinner() ;
+		if( bInitialized ) return ;
+		bInitialized = true ;
 		//console.log('Connected to the gateway.') ;
-	}) ;
 
-	$( "#tabs" ).tabs();	// Stylize by jquery ui
-	// When selected
-	res_tree.on('changed.jstree', function (e, data) {
-		if( data.action == 'select_node' ) {
-			if( res_tree.jstree( 'is_open' , data.node ) ){
-				// Already open
-				if( data.node.id != '.')
-					res_tree.jstree( 'close_node', data.node);
-			} else {// Not open yet
-				var selnodename = data.selected[0] ;
-				if( node_properties[selnodename].isleaf ){
-					if( node_properties[selnodename].longdoc != undefined )
-						alert(node_properties[selnodename].longdoc) ;
-					else
-						alert('No documentation available on this leaf.') ;
-				} else {
-					t_open(selnodename) ;
+		// When selected
+		res_tree.on('changed.jstree', function (e, data) {
+			if( data.action == 'select_node' ) {
+				if( res_tree.jstree( 'is_open' , data.node ) ){
+					// Already open
+					if( data.node.id != '.')
+						res_tree.jstree( 'close_node', data.node);
+				} else {// Not open yet
+					var selnodename = data.selected[0] ;
+					if( node_properties[selnodename].isleaf ){
+						if( node_properties[selnodename].longdoc != undefined )
+							alert(node_properties[selnodename].longdoc) ;
+						else
+							alert('No documentation available on this leaf.') ;
+					} else {
+						t_open(selnodename) ;
+					}
 				}
 			}
-		}
-	});
-	// When closed
-	res_tree.on('after_close.jstree',(e,data)=>{
-		data.node.children.forEach(cn=>{ delete node_properties[cn] ; })
-		res_tree.jstree( 'delete_node', data.node.children) ;
-	}) ;
-	// Open root elements for first time
-	res_tree.on('loaded.jstree',(e,data)=>{ t_open('.'); }) ;
-	// Initialize
-	res_tree.jstree({
-		core: {
-			'data': [{id:'.',text:'/'}]
-			,'check_callback': true
-        }
-        ,plugins : [ 'contextmenu' , 'types']
-        ,contextmenu : {
-        	items:node=>{
-        		var menu = {} ;
-        		if( node_properties[node.id].settings_schema != undefined ){
-	        			menu.Settings = {label:'Settings',action:obj=>{
-		        			if( node_properties[node.id].settings_schema.error != undefined ){
-	        					alert(node_properties[node.id].settings_schema.error) ;
-	        					return ;
-		        			}
+		});
+		// When closed
+		res_tree.on('after_close.jstree',(e,data)=>{
+			data.node.children.forEach(cn=>{ delete node_properties[cn] ; })
+			res_tree.jstree( 'delete_node', data.node.children) ;
+		}) ;
+		// Open root elements for first time
+		res_tree.on('loaded.jstree',(e,data)=>{ t_open('.'); }) ;
+		// Initialize
+		res_tree.jstree({
+			core: {
+				'data': [{id:'.',text:'/'}]
+				,'check_callback': true
+	        }
+	        ,plugins : [ 'contextmenu' , 'types']
+	        ,contextmenu : {
+	        	items:node=>{
+	        		var menu = {} ;
+	        		if( node_properties[node.id].settings_schema != undefined ){
+		        			menu.Settings = {label:'Settings',action:obj=>{
+			        			if( node_properties[node.id].settings_schema.error != undefined ){
+		        					alert(node_properties[node.id].settings_schema.error) ;
+		        					return ;
+			        			}
 
-							if( picogw == undefined ){
-								alert('Not connected to the gateway.') ;
-								return ;
-							}
-							picogw.callproc({
-								method:'GET'
-								,path:API_PREFIX+node.id.split('.').slice(0,-2).join('/')
-								,args:{option:'true'}
-							}).then(function(json){
-
-		        			// Reload schema and current value
-	    					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
-	    					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
-	    					node_properties[node.id].settings = new_node_prop.option.settings ;
-
-
-	        				var settings_schema = node_properties[node.id].settings_schema ;
-	        				var settings = node_properties[node.id].settings ;
-	        				var editor = new JSONEditor(
-	        					document.getElementById('settings_dlg_json_editor_holder')
-	        					,{
-	        						schema:settings_schema
-	        						,theme: 'jqueryui'
-	        						,iconlib: 'jqueryui'
-	        						,disable_collapse: true
-	        						,disable_edit_json: true
-	        						,disable_properties: true
-	        						,keep_oneof_values: false
-	        					}
-	        				) ;
-	        				if( settings != undefined)
-	        					editor.setValue(settings) ;
-
-	        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
-
-							$('#settings_dialog').dialog({
-								modal: true
-								, width: '90%'
-								, close : cleanup
-								, buttons: {
-									Apply: function(){
-										var path = node.id.split('.').join('/') ;
-
-										picogw.callproc({
-											method:'POST'
-											,path:API_PREFIX+path+'settings'
-											,args:{encrypted:cryptico.encrypt( JSON.stringify(editor.getValue()), RSA_PUB_KEY ).cipher}
-										}).then(function(json){
-											console.log(json) ;
-											if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
-										}).catch(e=>{
-											alert('API call failed:'+path) ; 
-											console.error(e) ;
-										});
-
-										cleanup() ;
-										$( this ).dialog( "close" );
-									}
-									,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
+								if( picogw == undefined ){
+									alert('Not connected to the gateway.') ;
+									return ;
 								}
-							}) ;
-	        			}) ;
-        			}} ;
-        		}
+								picogw.callproc({
+									method:'GET'
+									,path:API_PREFIX+node.id.split('.').slice(0,-2).join('/')
+									,args:{option:'true'}
+								}).then(function(json){
 
-	        	/*menu.Document = {label:'Document', action:obj=>{
-						if( node_properties[node.id].longdoc != undefined )
-							alert(node_properties[node.id].longdoc) ;
-						else
-							alert('No document available.') ;
-					}} ;*/
+			        			// Reload schema and current value
+		    					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
+		    					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
+		    					node_properties[node.id].settings = new_node_prop.option.settings ;
 
-				menu.OpenAPI = {label:'Open API',action:obj=>{
-					var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
-					window.open(API_PREFIX+path_real,'_blank') ;
-				}} ;
 
-        		return menu ;
+		        				var settings_schema = node_properties[node.id].settings_schema ;
+		        				var settings = node_properties[node.id].settings ;
+		        				var editor = new JSONEditor(
+		        					document.getElementById('settings_dlg_json_editor_holder')
+		        					,{
+		        						schema:settings_schema
+		        						,theme: 'jqueryui'
+		        						,iconlib: 'jqueryui'
+		        						,disable_collapse: true
+		        						,disable_edit_json: true
+		        						,disable_properties: true
+		        						,keep_oneof_values: false
+		        					}
+		        				) ;
+		        				if( settings != undefined)
+		        					editor.setValue(settings) ;
+
+		        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
+
+								$('#settings_dialog').dialog({
+									modal: true
+									, width: '90%'
+									, close : cleanup
+									, buttons: {
+										Apply: function(){
+											var path = node.id.split('.').join('/') ;
+
+											picogw.callproc({
+												method:'POST'
+												,path:API_PREFIX+path+'settings'
+												,args:{encrypted:cryptico.encrypt( JSON.stringify(editor.getValue()), RSA_PUB_KEY ).cipher}
+											}).then(function(json){
+												console.log(json) ;
+												if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+											}).catch(e=>{
+												alert('API call failed:'+path) ; 
+												console.error(e) ;
+											});
+
+											cleanup() ;
+											$( this ).dialog( "close" );
+										}
+										,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
+									}
+								}) ;
+		        			}) ;
+	        			}} ;
+	        		}
+
+		        	/*menu.Document = {label:'Document', action:obj=>{
+							if( node_properties[node.id].longdoc != undefined )
+								alert(node_properties[node.id].longdoc) ;
+							else
+								alert('No document available.') ;
+						}} ;*/
+
+					menu.OpenAPI = {label:'Open API',action:obj=>{
+						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+						window.open(API_PREFIX+path_real,'_blank') ;
+					}} ;
+
+	        		return menu ;
+				}
+				,select_node: false
+	        }
+			,types: {
+				folder: {icon: 'jstree-folder'}
+				,file: {icon: 'jstree-file'}
 			}
-			,select_node: false
-        }
-		,types: {
-			folder: {icon: 'jstree-folder'}
-			,file: {icon: 'jstree-file'}
-		}
-    }) ;
+	    }) ;
+	}) ;
 
+
+	// Create tabs
+	$( "#tabs" ).tabs();	// Stylize by jquery ui
 
 	// Load README document from GitHub
 	$.ajax({
