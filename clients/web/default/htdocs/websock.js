@@ -31,6 +31,8 @@ Unsubscribe:
 
 let picogw ;
 function connectws(onconnect_func /* can be called multiple times */){
+	start_spinner() ;
+
     let connection = new WebSocket('ws://'+location.host ,['picogw']);
     let tid = 0 ;
     let waitlist = {} ;
@@ -74,6 +76,7 @@ function connectws(onconnect_func /* can be called multiple times */){
 				}
 			}
 		}
+		stop_spinner() ;
 		onconnect_func() ;
 	};
 	connection.onmessage = function (e) {
@@ -95,6 +98,9 @@ function connectws(onconnect_func /* can be called multiple times */){
 		}
 	};
 
+	connection.onerror = function(){
+		start_spinner();
+	} ;
 	connection.onclose = function(){
 		for( let tid in waitlist )
 			waitlist[tid][1]({error:'Connection closed.'}) ;
@@ -102,6 +108,24 @@ function connectws(onconnect_func /* can be called multiple times */){
     	sublist = {} ;
     	picogw = undefined ;
 		console.error('Websocket disconnected. Retrying in 3 secs.') ;
+		start_spinner();
 		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
 	}
 } ;
+
+let spinner ;
+function start_spinner(){
+	if( spinner != undefined ){
+		console.log('Still connecting..') ;
+		return false ;
+	}
+	spinner = new Spinner().spin() ;
+	document.getElementsByTagName('body')[0].appendChild(spinner.el);
+	return true ;
+}
+function stop_spinner(){
+	if( spinner == undefined ) return ;
+	document.getElementsByTagName('body')[0].removeChild(spinner.el);
+	spinner = undefined ;
+}
+

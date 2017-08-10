@@ -45,6 +45,7 @@ The external libraries used and their licenses are listed in <a href='https://gi
 <script src='js/jstree.min.js'></script>
 <script src='js/jsoneditor.min.js'></script>
 <script src='js/marked.min.js'></script>
+<script src="js/spin.min.js"></script>
 <script src='js/cryptico.min.js'></script>
 <script src='websock.js'></script>
 <script>
@@ -62,7 +63,7 @@ function t_open(path){
 		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
 
 		if( picogw == undefined ){
-			alert("Not connected to the gateway.\nPlease reload after certain amount of time (10sec or so)") ;
+			// alert("Not connected to the gateway.\nPlease reload after certain amount of time (10sec or so)") ;
 			return ;
 		}
 		picogw.callproc({
@@ -116,7 +117,8 @@ function t_open(path){
 
 onload = function(){
 	connectws(()=>{
-		console.log('Connected to the gateway.') ;
+		stop_spinner() ;
+		//console.log('Connected to the gateway.') ;
 	}) ;
 
 	$( "#tabs" ).tabs();	// Stylize by jquery ui

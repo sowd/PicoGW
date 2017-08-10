@@ -268,6 +268,7 @@ Then a value change is asynchronously notified by a PUB JSON object.
 [jQuery](https://jquery.com/)  
 [jQuery UI](https://jqueryui.com/)  
 [marked](https://github.com/chjj/marked)  
+[spin.js](http://spin.js.org/)  
   
 **npm**  
 [arped](https://www.npmjs.com/package/arped)  
