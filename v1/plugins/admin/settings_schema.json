@@ -2,7 +2,13 @@
 	"title": "Admin Settings"
 	,"type": "object"
 	,"properties":{
-		"interfaces":{
+		"server_port":{
+			"title": "Port nubmer of web server"
+			,"type":"integer"
+			,"description" : "-1 keeps the current port"
+			,"default":-1
+		}
+		,"interfaces":{
 			"title": "Network Interfaces (THIS WILL DESTROY YOUR CURRENT NETWORK CONNECTION!)"
 			,"type": "object"
 			,"oneOf": []
