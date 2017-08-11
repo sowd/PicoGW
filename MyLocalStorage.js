@@ -6,7 +6,6 @@ const INDEX_KEY_NAME = '__index__' ;
 
 exports.QuotaLocalStorage = class {
 	constructor(path,quota){
-		console.log('.....'+path);
 		this.path = path ;
 		this.quota = (quota || 5000000) ; // 5MB default
 		this.ls = new LocalStorage(path) ;
@@ -22,7 +21,6 @@ exports.QuotaLocalStorage = class {
 				let del_key = index.order.shift() ;
 				let size = index.keys[del_key] ;
 				this.ls.removeItem(del_key) ;
-				console.log('Delete '+del_key);
 				index.total -= size ;
 				delete index.keys[del_key] ;
 			}
@@ -35,6 +33,14 @@ exports.QuotaLocalStorage = class {
 	getKeys(){
 		let index = JSON.parse(this.ls.getItem(INDEX_KEY_NAME)) ;
 		return index.keys ;
+	}
+	get length(){
+		let index = JSON.parse(this.ls.getItem(INDEX_KEY_NAME)) ;
+		return index.order.length ;
+	}
+	key(num){
+		let index = JSON.parse(this.ls.getItem(INDEX_KEY_NAME)) ;
+		return index.order[num] ;
 	}
 	getSize(){
 		let index = JSON.parse(this.ls.getItem(INDEX_KEY_NAME)) ;
@@ -87,8 +93,6 @@ exports.QuotaLocalStorage = class {
 
 		this.ls.setItem(INDEX_KEY_NAME,JSON.stringify(index)) ;	// Update index
 	}
-
-	key(n){this.ls.key(n)}
 
 	clear(){
 		this.ls.clear() ;

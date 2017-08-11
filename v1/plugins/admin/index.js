@@ -289,7 +289,7 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 					ret[mac] = {
 						active:macs[mac].active
 						,ip:ipaddr
-						,localhost:macs[mac].localhost
+						,localhost:(macs[mac].localhost==true)
 					} ;
 					if( args.option === 'true' ){
 						ret[mac].option = {
