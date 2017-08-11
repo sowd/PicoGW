@@ -62,6 +62,7 @@ exports.init = function(_clientInterface,_globals){
 			}
 			if(path==='/index.html'){
 				data = data.toString().split('__%%RSA_PUB_KEY%%__').join('"'+globals.getPubKey()+'"') ;
+				data = data.toString().split('__%%ADDITIONAL_LICENSES%%__').join('""') ;
 			}
 			res.set('Content-Type', mime.lookup(path) /*'text/html; charset=UTF-8'*/);
 			res.status(200);
