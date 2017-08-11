@@ -160,6 +160,7 @@ exports.eojs = {
 		,'88':[ x=>enum_forward(x,ON_OFF_41) ]						// Error state (RO)
 		,'8a':[ x=>{
 			x = toInt(x) ;
+			if( x==0 ) return 'unknown' ;
 			if(MAKER_CODES!=null){
 				let nx = MAKER_CODES[ ('0000000'+x.toString()).slice(-8) ] ;
 				if( nx != null ) x = nx ;
