@@ -82,7 +82,7 @@ exports.init = function(pi){
 					let interfaces = [] ;
 					lines.forEach( line=>{
 					  	let sp = line.trim().split(/\s+/) ;
-					  	if( sp.length !=4 || sp[0]=='lo') return ;	// Illegally formatted line
+					  	if( sp.length < 4 || sp[0]=='lo') return ;	// Illegally formatted line
 						if( sp[0].indexOf('wlan')==0 ) bWlanExist = true ;
 					  	interfaces.push(sp[0]) ;
 					}) ;
