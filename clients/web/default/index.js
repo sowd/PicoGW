@@ -8,7 +8,7 @@ var fs = require('fs');
 var pathm = require('path');
 const MyLocalStorage = require('../../../MyLocalStorage.js') ;
 const QuotaLocalStorage = MyLocalStorage.QuotaLocalStorage ;
-const localStorage = new QuotaLocalStorage(pathm.dirname(__filename)+'/localStorage') ;
+const localStorage = new QuotaLocalStorage(pathm.dirname(__filename)+'/localstorage') ;
 
 var clientInterface , globals;
 
@@ -20,6 +20,8 @@ exports.init = function(_clientInterface,_globals){
 
 	log = clientInterface.log ;
 
+	var SERVER_PORT = globals.cmd_opts.get('port') || localStorage.getItem('PORT_NUM') || 8080 ;
+
 	var http = express() ;
 	http.use(bodyParser.urlencoded({ extended: true }));
 	http.use(bodyParser.json());
@@ -27,12 +29,9 @@ exports.init = function(_clientInterface,_globals){
 	    res.jsonp(e) ;	//Catch json error
 	});
 
-	var SERVER_PORT = globals.cmd_opts.get('port') || localStorage.getItem('PORT_NUM') || 8080 ;
-
 	var server ;
 
 	function start_server(){
-
 		if( server != undefined ) server.close() ;
 
 		server = http.listen(SERVER_PORT,function() {
@@ -70,8 +69,8 @@ exports.init = function(_clientInterface,_globals){
 					return ;
 				}
 				if(path==='/index.html'){
-					data = data.toString().split('__%%RSA_PUB_KEY%%__').join('"'+globals.getPubKey()+'"') ;
-					data = data.toString().split('__%%ADDITIONAL_LICENSES%%__').join('""') ;
+					data = data.toString().split('__%%RSA_PUB_KEY%%__').join('"'+globals.getPubKey()+'"')
+						.split('__%%ADDITIONAL_LICENSES%%__').join('""') ;
 				}
 				res.set('Content-Type', mime.lookup(path) /*'text/html; charset=UTF-8'*/);
 				res.status(200);
@@ -163,7 +162,7 @@ exports.init = function(_clientInterface,_globals){
 
 	clientInterface.subscribe('/v1/admin/client_settings',re=>{
 		let cs = re['/v1/admin/client_settings'] ;
-		if( cs.port != null ){
+		if( cs.port != null && cs.port != SERVER_PORT ){
 			localStorage.setItem('PORT_NUM',cs.port) ;
 			SERVER_PORT = cs.port ;
 			start_server() ;

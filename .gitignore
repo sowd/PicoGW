@@ -4,7 +4,7 @@ v1/plugins/db/data/*
 v1/plugins/log
 clients/.key
 clients/web/custom
-clients/web/default/localStorage/*
+clients/web/default/localstorage/*
 v1/plugins/admin/settings.json
 v1/plugins/echonet/makercodes.json
 
