@@ -10,13 +10,14 @@ const MyLocalStorage = require('../../../MyLocalStorage.js') ;
 const QuotaLocalStorage = MyLocalStorage.QuotaLocalStorage ;
 const localStorage = new QuotaLocalStorage(pathm.dirname(__filename)+'/localstorage') ;
 
-var clientInterface , globals;
+var clientInterface , globals , almightyClientInterface;
 
 var log = (msg) => { console.log('client> '+msg); };
 
-exports.init = function(_clientInterface,_globals){
+exports.init = function(_clientInterface,_globals,_almightyClientInterface){
 	clientInterface = _clientInterface ;
 	globals = _globals ;
+	almightyClientInterface = _almightyClientInterface ;
 
 	log = clientInterface.log ;
 
@@ -118,18 +119,18 @@ exports.init = function(_clientInterface,_globals){
 								connection.sendUTF(JSON.stringify(re)) ;
 							} ;
 							if( subscribe_funcs[req.path] == undefined ){
-								clientInterface.subscribe(req.path,cbfunc) ;
+								almightyClientInterface.subscribe(req.path,cbfunc) ;
 								subscribe_funcs[req.path] = cbfunc ;
 							}
 							connection.sendUTF(JSON.stringify({success:true,tid:req.tid}));
 		        		} else if( req.method.toUpperCase() == 'UNSUB' ){
 		        			if( subscribe_funcs[req.path] != undefined ){
-								clientInterface.unsubscribe(req.path,subscribe_funcs[req.path]) ;
+								almightyClientInterface.unsubscribe(req.path,subscribe_funcs[req.path]) ;
 								delete subscribe_funcs[req.path] ;
 							}
 							connection.sendUTF(JSON.stringify({success:true,tid:req.tid}));
 		        		} else {
-		        			clientInterface.callproc(req).then(re=>{
+		        			almightyClientInterface.callproc(req).then(re=>{
 								re.tid = req.tid ;
 								connection.sendUTF(JSON.stringify(re)+"\n") ;
 							}).catch(e=>{
@@ -150,7 +151,7 @@ exports.init = function(_clientInterface,_globals){
 		    connection.on('close', function(reasonCode, description) {
 		        //log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected.');
 		        for( let path in subscribe_funcs ){
-			        clientInterface.unsubscribe(path,subscribe_funcs[path]) ;
+			        almightyClientInterface.unsubscribe(path,subscribe_funcs[path]) ;
 			    }
 			    subscribe_funcs = {} ;
 		    });
@@ -160,7 +161,7 @@ exports.init = function(_clientInterface,_globals){
 
 	start_server() ;
 
-	clientInterface.subscribe('/v1/admin/client_settings',re=>{
+	almightyClientInterface.subscribe('/v1/admin/client_settings',re=>{
 		let cs = re['/v1/admin/client_settings'] ;
 		if( cs.port != null && cs.port != SERVER_PORT ){
 			localStorage.setItem('PORT_NUM',cs.port) ;

@@ -7,6 +7,11 @@ let sudo = require('./sudo.js');
 var fs = require('fs');
 const exec = require('child_process').exec;
 
+const MyLocalStorage = require('../../../MyLocalStorage.js') ;
+const SingleFileLocalStorage = MyLocalStorage.SingleFileLocalStorage ;
+const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+const clLocalStorage = new SingleFileLocalStorage(MYPATH+'/../../../clients/localstorage.json') ;
+
 const NMCLI_CONNECTION_NAME_PREFIX = 'picogw_conn' ;
 
 const RSA_BITS = 1024 ;
@@ -16,7 +21,7 @@ exports.init = function(pi){
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
 	localStorage = pluginInterface.localStorage ;
-	
+
 	ipv4.setNetCallbackFunctions(
 		function(newid,newip){
 			for( let plugin_name in netIDCallbacks )
@@ -47,6 +52,29 @@ exports.init = function(pi){
 			let schema_default_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema_default.json').toString()) ;
 			let schema_wlan_json = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings_schema_wlan.json').toString()) ;
 
+			let cl_settings = clLocalStorage.content() ;
+			let cur_settings ;
+			try {
+				cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
+			} catch(e){} ;
+
+			if( cl_settings != null ){
+				cur_settings.api_filter = {}
+				let set_prop = {};//schema_json.properties ;
+				for( let clname in cl_settings ){
+					set_prop[clname] = {
+						title: clname+' client allowed path in regexp'
+						,type:'string'
+					} ;
+					if(cl_settings[clname].filter != null )
+						set_prop[clname].default = cl_settings[clname].filter ;
+
+					cur_settings.api_filter[clname] = cl_settings[clname].filter ;
+				}
+				schema_json.properties.api_filter.properties = set_prop ;
+				fs.writeFileSync(pluginInterface.getpath()+'settings.json',JSON.stringify(cur_settings,null,'\t')) ;
+			}
+
 			exec('nmcli d', (err, stdout, stderr) => {
 				let lines = stdout.split("\n") ;
 				if( err || lines.length<2 ){
@@ -69,14 +97,14 @@ exports.init = function(pi){
 					if( lines.length==0 ){ ac({error:'No network available.'}) ; return ; }
 
 					let cur_settings_interf , cur_settings_ap ;
-					try {
-						let cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
+//					try {
+//						let cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
 						for( let k in cur_settings.interfaces ){
 							cur_settings_interf = k ;
 							if( k.indexOf('wlan')==0 )
 								cur_settings_ap = cur_settings.interfaces[k].apname ;
 						}
-					} catch(e){} ;
+//					} catch(e){} ;
 					// Correct visible APs should be listed
 					let bWlanExist = false ;
 					let interfaces = [] ;
@@ -149,6 +177,12 @@ exports.init = function(pi){
 		return new Promise((ac,rj)=>{
 			if( newSettings.server_port != -1 )
 				pluginInterface.publish('client_settings',{port:newSettings.server_port}) ;
+
+			for( let cl_name in newSettings.api_filter ){
+				let clo = clLocalStorage.getItem(cl_name) ;
+				clo.filter = newSettings.api_filter[cl_name] ;
+				clLocalStorage.setItem(cl_name,clo) ;
+			}
 
 			if( newSettings.interfaces != null ){
 				let root_pwd = newSettings.root_passwd ;

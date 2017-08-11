@@ -8,6 +8,11 @@
 			,"description" : "-1 keeps the current port"
 			,"default":-1
 		}
+		,"api_filter":{
+			"title":"API filter in regular expression"
+			,"type":"object"
+			,"properties":{}
+		}
 		,"interfaces":{
 			"title": "Network Interfaces (THIS WILL DESTROY YOUR CURRENT NETWORK CONNECTION!)"
 			,"type": "object"

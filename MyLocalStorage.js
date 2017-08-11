@@ -132,4 +132,12 @@ exports.SingleFileLocalStorage = class {
 		delete st[keyName] ;
 		fs.writeFileSync(this.MYPATH,JSON.stringify(st,null,"\t")) ;
 	}
+	content(){
+		let st = {} ;
+		try {
+			st = JSON.parse(fs.readFileSync(this.MYPATH).toString()) ;
+			return st ;
+		} catch(e){}
+		return null ;
+	}
 }

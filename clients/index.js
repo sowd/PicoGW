@@ -3,6 +3,11 @@ var fs = require('fs');
 let cryptico = require('cryptico');
 const RSA_BITS = 1024 ;
 
+const MyLocalStorage = require('../MyLocalStorage.js') ;
+const SingleFileLocalStorage = MyLocalStorage.SingleFileLocalStorage ;
+const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+const localStorage = new SingleFileLocalStorage(MYPATH+'/localstorage.json') ;
+
 var ClientInterface = require('./ClientInterface.js').ClientInterface ;
 var globals ;
 
@@ -10,18 +15,32 @@ var log = msg=>{console.log('client manager> '+msg);} ;
 
 exports.clientFactory = function(client_name){
 	var ci = new ClientInterface(globals) ;
+
+	if( client_name != undefined && localStorage.getItem(client_name,null) == null )
+		localStorage.setItem(client_name,{}) ;
+
 	var exportmethods = {} ;
 		['callproc','subscribe','unsubscribe','unsubscribeall','log'].forEach(methodname => {
 		exportmethods[methodname] = function(){
-			return ci[methodname].apply(ci,arguments);
+			let filter = localStorage.getItem(client_name,{filter:''}).filter ;
+			if( filter == null || filter.length==0 || methodname == 'unsubscribe' || methodname == 'unsubscribeall' || methodname == 'log' )
+				return ci[methodname].apply(ci,arguments);
+			let arg = arguments[0] ;
+			if(    (methodname == 'callproc'  && arg.path.match(new RegExp(filter))  )
+				|| (methodname == 'subscribe' && arg != '.' && arg.match(new RegExp(filter)) ) ){
+				return ci[methodname].apply(ci,arguments);
+			}
+			return Promise.reject({error:'The API call is prohibited.'}) ;
 		} ;
 	}) ;
 	if(client_name==undefined){ return Promise.resolve(ci) ; }
 	return new Promise( (ac,rj)=>{
 		try {
 			var cobj = require('./' + client_name + '/index.js') ;
+
 			// Plugin init must return procedure call callback function.
-			Promise.all([cobj.init(exportmethods,globals)]).then( p => {
+			// for web plugin, unconstrained client interface is provided as the third argument
+			Promise.all([cobj.init(exportmethods,globals , (client_name=='web'?ci:undefined) )]).then( p => {
 				log(client_name+' client initiaized') ;
 				ac(ci) ;
 			}).catch(e=>{
