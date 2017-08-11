@@ -8,7 +8,7 @@ exports.QuotaLocalStorage = class {
 	constructor(path,quota){
 		this.path = path ;
 		this.quota = (quota || 5000000) ; // 5MB default
-		this.ls = new LocalStorage(path) ;
+		this.ls = new LocalStorage(path,1000000000) ;	// 1GB Max
 		if( this.ls.getItem(INDEX_KEY_NAME) == null ){
 			this.ls.setItem(INDEX_KEY_NAME,JSON.stringify({
 				keys : {}
