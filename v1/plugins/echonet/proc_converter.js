@@ -1,4 +1,4 @@
-const ON_OFF_30 = [0x30,'on','off']
+const ON_OFF_30 = [0x30,'on','off'];
 const ON_OFF_41 = [0x41,'on','off'];
 const AVAILABILITY = [0x41,'available','none'];
 const OPEN_CLOSE_41 = [0x41,'open','close','stop'];
@@ -130,6 +130,11 @@ const COMMUNICATION_ID = [
 let comm_id_read = x=>
 	COMMUNICATION_ID[Math.floor(x[0]/16)] +':'+toHexStr(x.slice(1)) ;
 
+var fs = require('fs');
+
+const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+let MAKER_CODES ;
+try { MAKER_CODES = JSON.parse( fs.readFileSync(MYPATH+'/makercodes.json','utf-8')) ; } catch(e){}
 
 
 // Two function are set for each epc. Both can be omited.
@@ -153,7 +158,13 @@ exports.eojs = {
 		,'85':[x=>0.001*toInt(x)]
 		,'87':[toInt,x=>[x]]
 		,'88':[ x=>enum_forward(x,ON_OFF_41) ]						// Error state (RO)
-		,'8a':[ toInt ]				// Manufacture code (RO)
+		,'8a':[ x=>{
+			x = toInt(x) ;
+			if(MAKER_CODES!=null){
+				let nx = MAKER_CODES[ ('0000000'+x.toString()).slice(-8) ] ;
+				if( nx != null ) x = nx ;
+			}
+			return x ;} ]				// Manufacture code (RO)
 		,'8b':[ NULLPROP ]
 		,'8c':[ toAsciiStr ]
 		,'8d':[ toAsciiStr ]
