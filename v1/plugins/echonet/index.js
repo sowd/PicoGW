@@ -645,9 +645,21 @@ function onProcCall_Get( method , devid , propname , args ){
 			}
 		}*/
 
+		let propMap = {} ;
+		['StateChangeAnnouncementPropertyMap','SetPropertyMap','GetPropertyMap'].forEach(mname=>{
+			if( dev[mname] && dev[mname].cache ){
+				let c = dev[mname].cache ;
+				if( c[0] >= 16 )
+					c = EL.parseMapForm2(EL.bytesToString(c)) ;
+				c.slice(1,1+c[0]).forEach(epc_d=>{
+					propMap[epc_d.toString(16)] = null ;
+				})
+			}
+		});
 
-		for( var epc in ELDB[eoj].epcs ){
+		for( let epc in propMap ){
 			var epco = ELDB[eoj].epcs[epc] ;
+			if( epco == null ) continue ;
 			var epcType = epco.epcType ;
 			cache_edt = cache_value = cacheStr = cache_timestamp = undefined ;
 			if( dev[epcType] != undefined ){
