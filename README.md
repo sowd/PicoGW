@@ -49,7 +49,7 @@ Then run the GW from **forever**. The following command should be hit in the Pic
 $ forever start main.js
 ```
 
-####Stop background execution
+#### Stop background execution
 
 ```bash
 $ forever stop main.js
