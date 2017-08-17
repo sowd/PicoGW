@@ -24,7 +24,7 @@ $ cd PicoGW
 $ npm i
 ```
 
-**Running**
+**Run**
 
 ```bash
 $ node main.js
@@ -37,30 +37,45 @@ Follow the instruction shown in the opened page.
 
 ## Additional settings
 
-**Background execution**
+#### Background execution
 
-The first line is necessary only for first time. The second line should be executed in PicoGW directory.
+Install **forever**
 ```bash
 $ sudo npm install forever -g
+```
+
+Then run the GW from **forever**. The following command should be hit in the PicoGW directory.
+```bash
 $ forever start main.js
 ```
 
-**Stop background execution**
+####Stop background execution
 
 ```bash
 $ forever stop main.js
 ```
 
 
-**Changing the server port**
+#### Chang the server port
 
+You can change the port from the admin plugin settings.  
+Altenatively, you can supply the port number as the command line argument.
 ```bash
 $ node main.js -p 12345
 ```
 
-**Changing the maker code**
+#### Change the maker code
 
 Change v1/plugins/echonet/controller_properties.json's "8a" value.
+
+#### Run with node-inspector
+
+**./debug.sh** simplifies running PicoGW with Chrome DevTools.
+The following command will provide a brief instruction.
+
+```bash
+$ ./debug.sh help
+```
 
 ## Remarks
 
