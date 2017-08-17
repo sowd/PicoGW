@@ -58,7 +58,7 @@ exports.init = function(pi){
 				cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
 			} catch(e){} ;
 
-			if( cl_settings != null ){
+			if( typeof cur_settings == 'object' ){
 				cur_settings.api_filter = {}
 				let set_prop = {};//schema_json.properties ;
 				for( let clname in cl_settings ){
@@ -168,7 +168,7 @@ exports.init = function(pi){
 					}
 				}
 			});
-	   	  } catch(e){ac({error:'Cannot read admin/settings_schema*.json'});}
+	   	  } catch(e){ac({error:e.toString()});}
 
 		}) ;
 	}) ;
