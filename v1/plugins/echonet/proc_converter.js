@@ -75,8 +75,8 @@ const EV_CHARGER_DISCHARGER_TYPE = {
 	]
 } ;
 
-const pure_enum_forward = (x,setting) => settings.values[setting.keys.indexOf(x[0])] ;
-const pure_enum_backward = (x,setting) => settings.keys[setting.values.indexOf(x.toLowerCase())] ;
+const pure_enum_forward = (x,setting) => setting.values[setting.keys.indexOf(x[0])] ;
+const pure_enum_backward = (x,setting) => setting.keys[setting.values.indexOf(x.toLowerCase())] ;
 
 
 const toHexStr = x => x.map(xi=>('0'+xi.toString(16)).slice(-2)).join('') ;
