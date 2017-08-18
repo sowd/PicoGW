@@ -56,10 +56,12 @@ exports.init = function(pi){
 			let cur_settings ;
 			try {
 				cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
-			} catch(e){} ;
+			} catch(e){
+				cur_settings = {} ;
+			} ;
 
-			if( typeof cur_settings == 'object' ){
-				cur_settings.api_filter = {}
+			if( typeof cl_settings == 'object' ){
+				cur_settings.api_filter = {} ;
 				let set_prop = {};//schema_json.properties ;
 				for( let clname in cl_settings ){
 					set_prop[clname] = {
@@ -72,7 +74,7 @@ exports.init = function(pi){
 					cur_settings.api_filter[clname] = cl_settings[clname].filter ;
 				}
 				schema_json.properties.api_filter.properties = set_prop ;
-				fs.writeFileSync(pluginInterface.getpath()+'settings.json',JSON.stringify(cur_settings,null,'\t')) ;
+				//fs.writeFileSync(pluginInterface.getpath()+'settings.json',JSON.stringify(cur_settings,null,'\t')) ;
 			}
 
 			exec('nmcli d', (err, stdout, stderr) => {
@@ -98,7 +100,7 @@ exports.init = function(pi){
 
 					let cur_settings_interf , cur_settings_ap ;
 
-					if( typeof cur_settings == 'object' ){
+					if( typeof cur_settings.interfaces == 'object' ){
 						for( let k in cur_settings.interfaces ){
 							cur_settings_interf = k ;
 							if( k.indexOf('wlan')==0 )
