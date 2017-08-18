@@ -45,6 +45,7 @@
 		}
 		,"root_passwd": {
 			"title": "Sudo password"
+			,"description": "Necessary to change network setup"
 			,"type": "string"
 			,"format":"password"
 		}
