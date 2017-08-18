@@ -1,0 +1,11 @@
+{
+	"title": "Admin Settings"
+	,"type": "object"
+	,"properties":{
+		"apikey":{
+			"title": "OpenWeatherMap API key"
+			,"type":"string"
+			,"description" : "You can obtain your own api key by creating OpenWeatherMap account on https://home.openweathermap.org/users/sign_up"
+		}
+	}
+}

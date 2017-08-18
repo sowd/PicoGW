@@ -11,7 +11,7 @@ exports.init = function(pi){
 	pluginInterface = pi ;
 	log = pi.log ;
 
-	//pi.on('SettingsUpdated' , args =>{} ) ;
+	//pi.on('SettingsUpdated' , newSettings =>{} ) ;
 
 	return onProcCall ;
 } ;
