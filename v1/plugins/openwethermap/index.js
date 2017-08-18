@@ -12,81 +12,60 @@ exports.init = function(pi){
 	pluginInterface = pi ;
 	log = pi.log ;
 
-	// pi.on('SettingsUpdated' , newSettings =>{ apikey = newSettings.apikey ; } ) ;
+	pi.on('SettingsUpdated' , newSettings =>{
+	 for(let k in newSettings){
+	 	if( typeof newSettings[k] == 'string' )
+	 		newSettings[k] = newSettings[k].trim() ;
+	 }
+	} ) ;
 
 	return onProcCall ;
 } ;
 
 function onProcCall( method , path , args ){
-	let apikey ;
-	try {
-		apikey = JSON.parse(
-				fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()
-			).apikey ;
-	} catch(e){
-		return {error:'No openweathermap API key is specified.\nYou can obtain your own api key by creating OpenWeatherMap account on https://home.openweathermap.org/users/sign_up'}
-	} ;
-
 	let re = {
-		weather:{
-			lat:'latitude',lon:'longitude'
-			, q:'{city name} or {city name. eg."London"},{country code. eg."uk"}.'
-			, zip: 'alternatively zip code can be specified.'
-		}
-		,forecast:{
-			lat:'latitude',lon:'longitude'
-			, q:'{city name} or {city name. eg."London"},{country code. eg."uk"}.'
-			, zip: 'alternatively zip code can be specified.'
-		}
+		weather:{}
+		,forecast:{}
 	} ;
 	if( args && args.option === 'true' ){
-		re.weather.option = {
-			doc:{
-				short:'Current weather'
-				,long:
-					'Case 1: ?q={city name}(in ISO 3166 country codes) // '
-					+'Case 2: ?q={city name},{country code} // '
-					+'Case 3: ?id={city ID}    (See http://bulk.openweathermap.org/sample/) // '
-					+'Case 4: ?lat={lat}&lon={lon} // '
-					+'Case 5: ?zip={zip code},{country code}'
-
-			}
-		} ;
-		re.forecast.option = {
-			doc:{
-				short:'5 day / 3 hour weather forecast'
-				,long:
-					'Case 1:  ?q={city name},{country code}  (both in ISO 3166 country codes) // '
-					+'Case 2:  ?id={city ID}    (See http://bulk.openweathermap.org/sample/) // '
-					+'Case 3:  ?lat={lat}&lon={lon} // '
-					+'Case 4:  ?zip={zip code},{country code}'
-			}
-		} ;
+		re.weather.option = { doc:{ short:'Current weather' } } ;
+		re.forecast.option = { doc:{ short:'5 day / 3 hour weather forecast' } } ;
 	}
 
 	switch(method){
 	case 'GET' :
-		if( path == ''){
+		if( path == '')
 			return re ;
-		}
 
 		return new Promise( (ac,rj)=>{
+			let API_URL ;
 			try {
-				let args_flat = '' ;
-				for( let key in args )
-					args_flat += key+'='+args[key]+'&' ;
-
-				if( args_flat.length==0 ){ // No args
-					switch( path ){
-					case 'weather' :
-					case 'forecast' :
-						ac(re[path]) ;
-						return ;
-					}
-					rj({error:'No such path:'+path}) ;
+				let settings ;
+				try {
+					settings = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'settings.json').toString() ) ;
+					if( typeof settings.APPID != 'string') throw {} ;
+				} catch(e){
+					rj({error:'No openweathermap API key is specified.\nYou can obtain your own api key by creating OpenWeatherMap account on https://home.openweathermap.org/users/sign_up'}) ;
 					return ;
+				} ;
+				settings = Object.assign(settings,args) ;
+
+				let settings_flat = '' ;
+				for( let key in settings ){
+					if( settings[key] == null || settings[key]=='' ){
+						delete settings[key] ;
+ 						continue ;
+					}
+					settings_flat += '&'+key+'='+settings[key] ;
 				}
-				http.get(`${OPENWEATHERMAP_BASE_URL}${path}?${args_flat}APPID=${apikey}`, function(res) {
+
+				API_URL = OPENWEATHERMAP_BASE_URL+path+'?'+settings_flat.slice(1) ; //remove first &
+
+				if( settings.q == null && (settings.lat == null || settings.lon == null ) )
+					rj({error:'No position data specified.',api:API_URL }) ;
+
+
+				http.get(API_URL, function(res) {
 					res.setEncoding('utf8');
 					let rep_body = '' ;
 					res.on('data', function(str) {
@@ -95,16 +74,16 @@ function onProcCall( method , path , args ){
 					res.on('end', function() {
 						try {
 							ac(JSON.parse(rep_body)) ;
-						} catch(e){ rj({error:e.toString()}); };
+						} catch(e){ rj({error:e.toString(),api:API_URL}); };
 					});
 				})
 				.setTimeout(REQ_TIMEOUT)
 				.on('timeout', function() {
-					rj({error:'Request time out'});
+					rj({error:'Request time out',api:API_URL});
 				}).on('error', function(e) {
-					rj({error:e.message});
+					rj({error:e.message,api:API_URL});
 				});
-			} catch(e){ rj({error:e.toString()}); };
+			} catch(e){ rj({error:e.toString(),api:API_URL}); };
 		}) ;
 	case 'POST' :
 	case 'PUT' :
