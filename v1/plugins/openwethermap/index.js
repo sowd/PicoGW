@@ -2,6 +2,7 @@ var fs = require('fs');
 let http = require('http');
 
 const REQ_TIMEOUT = 30*1000 ;
+const OPENWEATHERMAP_BASE_URL = 'http://api.openweathermap.org/data/2.5/' ;
 
 let pluginInterface ;
 let log = console.log ;
@@ -83,7 +84,7 @@ function onProcCall( method , path , args ){
 					rj({error:'No such path:'+path}) ;
 					return ;
 				}
-				http.get(`http://api.openweathermap.org/data/2.5/${path}?${args_flat}APPID=${apikey}`, function(res) {
+				http.get(`${OPENWEATHERMAP_BASE_URL}${path}?${args_flat}APPID=${apikey}`, function(res) {
 					res.setEncoding('utf8');
 					let rep_body = '' ;
 					res.on('data', function(str) {
