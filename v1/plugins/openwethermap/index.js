@@ -73,7 +73,9 @@ function onProcCall( method , path , args ){
 		return new Promise( (ac,rj)=>{
 			try {
 				let args_flat = '' ;
-				for( let key in args ) args_flat += key+'='+args[key]+'&' ;
+				for( let key in args )
+					args_flat += key+'='+args[key]+'&' ;
+
 				if( args_flat.length==0 ){ // No args
 					switch( path ){
 					case 'weather' :

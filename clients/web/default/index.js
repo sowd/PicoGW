@@ -49,6 +49,8 @@ exports.init = function(_clientInterface,_globals,_almightyClientInterface){
 				if( req.originalUrl.indexOf('?') >= 0 ){
 					req.originalUrl.slice(req.originalUrl.indexOf('?')+1).split('&').forEach(eq=>{
 						var terms = eq.split('=') ;
+						if( terms[0] == 'callback' || terms[0] == 'jsoncallback' )
+							return ;
 						if( terms.length == 1 ) args.value = terms[0] ;
 						else					args[terms[0]] = decodeURIComponent(terms[1]) ;
 					}) ;
