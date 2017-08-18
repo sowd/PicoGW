@@ -97,14 +97,15 @@ exports.init = function(pi){
 					if( lines.length==0 ){ ac({error:'No network available.'}) ; return ; }
 
 					let cur_settings_interf , cur_settings_ap ;
-//					try {
-//						let cur_settings = JSON.parse(fs.readFileSync(pluginInterface.getpath()+'settings.json').toString()) ;
+
+					if( typeof cur_settings == 'object' ){
 						for( let k in cur_settings.interfaces ){
 							cur_settings_interf = k ;
 							if( k.indexOf('wlan')==0 )
 								cur_settings_ap = cur_settings.interfaces[k].apname ;
 						}
-//					} catch(e){} ;
+					}
+
 					// Correct visible APs should be listed
 					let bWlanExist = false ;
 					let interfaces = [] ;
