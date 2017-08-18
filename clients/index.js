@@ -22,10 +22,22 @@ exports.clientFactory = function(client_name){
 	var exportmethods = {} ;
 		['callproc','subscribe','unsubscribe','unsubscribeall','log'].forEach(methodname => {
 		exportmethods[methodname] = function(){
+			let arg = arguments[0] ;
+
+			// Prohibit access to settings.json (Allowed only for websocket connection.)
+			if( methodname == 'callproc' && (
+				(arg.method.toUpperCase() == 'POST' && arg.path.slice(-9)=='/settings')
+				|| (arg.method.toUpperCase() == 'GET' && arg.args.option == 'true')
+			) ){
+				return Promise.reject({error:'The API call is prohibited.'}) ;
+			}
+
+			// Accept all API access if no filter is set.
 			let filter = localStorage.getItem(client_name,{filter:''}).filter ;
 			if( filter == null || filter.length==0 || methodname == 'unsubscribe' || methodname == 'unsubscribeall' || methodname == 'log' )
 				return ci[methodname].apply(ci,arguments);
-			let arg = arguments[0] ;
+
+			// Filter is set.
 			if(    (methodname == 'callproc'  && arg.path.match(new RegExp(filter))  )
 				|| (methodname == 'subscribe' && arg != '.' && arg.match(new RegExp(filter)) ) ){
 				return ci[methodname].apply(ci,arguments);
