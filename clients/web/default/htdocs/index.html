@@ -33,6 +33,16 @@ This is distributed from <a href='https://github.com/KAIT-HEMS/PicoGW' target="_
 The external libraries used and their licenses are listed in <a href='https://github.com/KAIT-HEMS/PicoGW/blob/master/README.md' target='_blank'>GitHub README</a>.
 </div>
 </div>
+
+<div id="api-test-dialog" title="API Test">
+  <!-- p>
+    <span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
+    Your files have downloaded successfully into the My Downloads folder.
+  </p -->
+  <p id='api-testing-message'>
+  </p>
+</div>
+
 </body>
 
 <!-- Settings dialog -->
@@ -237,7 +247,61 @@ onload = function(){
 								alert('No document available.') ;
 						}} ;*/
 
-					menu.OpenAPI = {label:'Open API',action:obj=>{
+					menu.TestAPI = {label:'Test API',action:obj=>{
+						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+						//window.open(API_PREFIX+path_real,'_blank') ;
+						
+						$.ajax({type:'GET',url:API_PREFIX+path_real,dataType:'json',
+							success:json=>{
+								let ht = '<pre>' ;
+								let access_queue = [] ;
+								for( let k in json ){ access_queue.push(k); }
+								function access(){
+									if( access_queue.length==0){
+										ht += '</pre><hr />API test completed.' ;
+										$('#api-testing-message').html(ht) ;
+										return ;
+									}
+									let ac_url = API_PREFIX+path_real+access_queue.shift() ;
+									ht += ac_url+':' ;
+									$('#api-testing-message').html(ht+'</pre>') ;
+									let starttime = (new Date()).getTime() ;
+									$.ajax({type:'GET',url:ac_url,dataType:'json',
+										success:json=>{
+											ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
+											ht += JSON.stringify(json)+'\n' ;
+											$('#api-testing-message').html(ht+'</pre>') ;
+											access() ;
+										}
+										,error:e=>{
+											ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
+											ht += JSON.stringify(e,null,'\t') ;
+											$('#api-testing-message').html(ht+'</pre>') ;
+											access() ;
+										}
+									}) ;
+								}
+								access() ;
+								$( '#api-test-dialog' ).dialog({
+									modal: true
+									,buttons: {
+										Ok: function() {
+											$('#api-testing-message').html('') ;
+											access_queue = [] ;
+											$( this ).dialog( "close" );
+										}
+									}
+									///,width:'80%',height:'80%'
+								});
+							}
+							,error:e=>{
+								alert('API call failed:'+API_PREFIX+path_real) ;
+							}
+						}) ;
+
+					}} ;
+
+					menu.OpenAPI = {label:'Open API in other tab',action:obj=>{
 						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
 						window.open(API_PREFIX+path_real,'_blank') ;
 					}} ;
