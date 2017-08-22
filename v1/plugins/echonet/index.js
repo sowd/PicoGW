@@ -581,6 +581,7 @@ function onProcCall_Get( method , devid , propname , args ){
 				devices[devid]={
 					mac:mac
 					,ip:macs[mac].ip
+					,active: dev.active
 				} ;
 
 				if( args.option === 'true'){
