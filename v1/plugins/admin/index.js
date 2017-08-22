@@ -4,12 +4,13 @@ let localStorage ;
 let ipv4 = require('./ipv4.js');
 let cryptico = require('cryptico');
 let sudo = require('./sudo.js');
+const pathm = require('path');
 var fs = require('fs');
 const exec = require('child_process').exec;
 
 const MyLocalStorage = require('../../../MyLocalStorage.js') ;
 const SingleFileLocalStorage = MyLocalStorage.SingleFileLocalStorage ;
-const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+const MYPATH  = __filename.split(pathm.sep).slice(0,-1).join('/') ;
 const clLocalStorage = new SingleFileLocalStorage(MYPATH+'/../../../clients/localstorage.json') ;
 
 const NMCLI_CONNECTION_NAME_PREFIX = 'picogw_conn' ;

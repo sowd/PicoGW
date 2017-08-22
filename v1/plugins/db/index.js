@@ -1,6 +1,7 @@
 var fs = require('fs');
+const pathm = require('path');
 const LocalStorage = require('node-localstorage').LocalStorage;
-const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+const MYPATH  = __filename.split(pathm.sep).slice(0,-1).join('/') ;
 const DATAPATH = MYPATH+'/data' ;
 const localStorage = new LocalStorage( DATAPATH ) ;
 

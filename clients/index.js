@@ -1,11 +1,12 @@
 // clients/index.js
 var fs = require('fs');
+const pathm = require('path');
 let cryptico = require('cryptico');
 const RSA_BITS = 1024 ;
 
 const MyLocalStorage = require('../MyLocalStorage.js') ;
 const SingleFileLocalStorage = MyLocalStorage.SingleFileLocalStorage ;
-const MYPATH  = __filename.split('/').slice(0,-1).join('/') ;
+const MYPATH  = __filename.split(pathm.sep).slice(0,-1).join('/') ;
 const localStorage = new SingleFileLocalStorage(MYPATH+'/localstorage.json') ;
 
 var ClientInterface = require('./ClientInterface.js').ClientInterface ;
