@@ -1,6 +1,6 @@
 ![PicoGW logo](clients/web/default/htdocs/res/PicoGW.png)
 
-A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports ECHONET Lite. The license is MIT.
+A minimalist's [Housing Web API](http://www.daiwahouse.co.jp/lab/HousingAPI/) gateway that supports [ECHONET Lite](http://echonet.jp/english/), [OpenWeatherMap](http://openweathermap.org/), and [Healbe GoBe](https://healbe.com/). The license is MIT.
 The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
 # Installation & Running
@@ -89,14 +89,13 @@ The Web API hosted by PicoGW is a developing version of [Housing API by Daiwa Ho
 
 The concept of this API is as follows:
 
-1. **Simple and easy**. The API basecally follows the concept of REST. At the same time, we tried not to be too strict to the concept. The API can violate the conceptual correctness to achieve easiness. We also put effort to keep source code small, because large source code hampers wide commitments.
+1. **Simple and easy**. The API basecally follows the concept of REST. At the same time, we tried not to be too strict to the concept. The API can violate the conceptual correctness to achieve easiness. For example, our PubSub model is implemented as a new method of REST.
 2. **Extensible**. The API should support the forthcoming IoT devices without drastically changing the basic calling styles. We adopt plugin architecture to achieve this.
-3. **Maximize the merit for residents**. Most home gateway system are developed by home appliances companies. PicoGW should be independent from the pressure from such industry and conservatively implement really necessary, minimal functionalities.
+3. **Independent from device-specific operations**. This is our goal. /v1/ API is really device-dependent, but we try to develop /v2/ API as device-independent one.
 
 ## Calling convention
 
 The API call is a simple HTTP access to the PicoGW server's 8080 port by default. The result is always given as a JSON object. Most APIs exist under **/v1/** (The root **/** access shows the control panel.)
-You can always write the API code in the URL field of your browser (HTTP GET access). 
 
 # API directory
 
@@ -192,6 +191,50 @@ Deletes the key and the corresponding data. Publishes {}.
 
 Deletes all data. (/v1/db path remains.)
 
+## Named pipe API
+
+Named pipe can be used as a transport of PicoGW API. It is convenient to access PicoGW's functionality within a single machine. To use this API, please first make two named piped files (by the **mkfifo** command), which must have the unique prefix with two kinds of postfices (_r and _w). For example :
+
+```bash
+$ mkfifo np_r np_w
+```
+will create a pair of named pipes. *np* in the example above can be an arbitrary vaild string.
+Then, PicoGW must be launched with **--pipe** option supplied with unique prefix:
+```bash
+$ node main.js --pipe np
+```
+In this mode, PicoGW will halt until the client that accesses the named pipe is connected. The client must open *_r* file with read only mode, while *_w* with write mode.
+
+The API call should be written to *_w* file as a string followed by a newline "\n". The string is a stringified JSON object such as:
+
+```
+{"method":"GET","path":"/v1/echonet/AirConditioner_1/OperatingState/","tid":"RANDOM_STR"}
+```
+**tid** is the transaction id of the request, which is used to match request and reply (multiple request causes unordered reply.)  
+To set a new value:
+```
+{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","args":{"value":["0x30"]},"tid":"RANDOM_STR"}
+```
+For PUT case, **args** key is necessary.
+Make sure that this request itself must not contain a newline "\n".
+
+The API result can be obtained from reading the *_r* file.
+
+## PubSub
+
+Connection-based API transports (named pipe and websocket) support PubSub model.
+
+#### Subscribe
+Send the following JSON to the transport. (wildcard is not supported now)
+
+> {"method":"SUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
+
+Then a value change is asynchronously notified by a PUB JSON object.
+
+#### Unsubscribe
+
+> {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
+
 # v2 API
 
 The PicoGW's v2 API, specified by the prefix /v2/, is in an experimental stage. Therefore, continuity of this API is not guaranteed.
@@ -227,51 +270,6 @@ Deletes an existing alias.
 #### GET|POST|PUT|DELETE /v2/[ALIAS_NAME]
 
 API call by the alias name, rather than the associated full API path.
-
-
-## Named pipe API
-
-Named pipe can be used as a transport of PicoGW API. It is convenient to access PicoGW's functionality within a single machine. To use this API, please first make two named piped files (by the **mkfifo** command), which must have the unique prefix with two kinds of postfices (_r and _w). For example :
-
-```bash
-$ mkfifo np_r np_w
-```
-will create a pair of named pipes. *np* in the example above can be an arbitrary vaild string.
-Then, PicoGW must be launched with **--pipe** option supplied with unique prefix:
-```bash
-$ node main.js --pipe np
-```
-In this mode, PicoGW will halt until the client that accesses the named pipe is connected. The client must open *_r* file with read only mode, while *_w* with write mode.
-
-The API call should be written to *_w* file as a string followed by a newline "\n". The string is a stringified JSON object such as:
-
-```
-{"method":"GET","path":"/v1/echonet/AirConditioner_1/OperatingState/","tid":"RANDOM_STR"}
-```
-**tid** is the transaction id of the request, which is used to match request and reply (multiple request causes unordered reply.)  
-To set a new value:
-```
-{"method":"PUT","path":"/v1/echonet/AirConditioner_1/OperatingState/","args":{"value":["0x30"]},"tid":"RANDOM_STR"}
-```
-For PUT case, **args** key is necessary.
-Make sure that this request itself must not contain a newline "\n".
-
-The API result can be obtained from reading the *_r* file.
-
-## PubSub
-
-Connection-based API transports (named pipe and in future, websocket) support PubSub model.
-
-#### Subscribe
-Send the following JSON to the transport. (wildcard is not supported now)
-
-> {"method":"SUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
-
-Then a value change is asynchronously notified by a PUB JSON object.
-
-#### Unsubscribe
-
-> {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
 
 ## Licenses
 
