@@ -2,6 +2,7 @@
 
 find ./ -name "localstorage.json" -exec rm {} \;
 rm ./v1/plugins/admin/settings.json
+rm ./v1/plugins/healbe/settings.json
 rm ./v1/plugins/openwethermap/settings.json
 rm ./clients/.key
 rm ./clients/localstorage.json
