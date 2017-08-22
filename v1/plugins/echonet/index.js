@@ -138,6 +138,7 @@ exports.init = function(pi /*,globals*/){
 					, epcName : names[eoj.epcs[epcname].epcName]
 					, epcDoc : eoj.epcs[epcname].doc
 					, edtConvFuncs : edtconvs
+					, test : eoj.epcs[epcname].test
 				} ;
 			}
 			ELDB[objnamelc] = minimize_obj ;
@@ -573,6 +574,7 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 function onProcCall_Get( method , devid , propname , args ){
 	if( devid == '' ){	// access 'echonet/' => device list
 		var devices = {} ;
+
 		for( var mac in macs ){
 			for( var devid in macs[mac].devices ){
 				var dev = macs[mac].devices[devid] ;
@@ -689,7 +691,9 @@ function onProcCall_Get( method , devid , propname , args ){
 						short : `${epco.epcName} EPC:${epc}`+cacheStr
 						,long : (epco.epcDoc==undefined?undefined:names[epco.epcDoc])
 					}
-				}
+				} ;
+				if( epco.test instanceof Array )
+					re[epcType].option.test = epco.test ;
 			}
 		}
 

@@ -248,55 +248,71 @@ onload = function(){
 						}} ;*/
 
 					menu.TestAPI = {label:'Test API',action:obj=>{
-						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+						let node_prop = node_properties[node.id] ;
+						let path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
 						//window.open(API_PREFIX+path_real,'_blank') ;
-						
-						$.ajax({type:'GET',url:API_PREFIX+path_real,dataType:'json',
-							success:json=>{
-								let ht = '<pre>' ;
-								let access_queue = [] ;
-								for( let k in json ){ access_queue.push(k); }
-								function access(){
-									if( access_queue.length==0){
-										ht += '</pre><hr />API test completed.' ;
-										$('#api-testing-message').html(ht) ;
-										return ;
-									}
-									let ac_url = API_PREFIX+path_real+access_queue.shift() ;
-									ht += ac_url+':' ;
-									$('#api-testing-message').html(ht+'</pre>') ;
-									let starttime = (new Date()).getTime() ;
-									$.ajax({type:'GET',url:ac_url,dataType:'json',
-										success:json=>{
-											ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
-											ht += JSON.stringify(json)+'\n' ;
-											$('#api-testing-message').html(ht+'</pre>') ;
-											access() ;
-										}
-										,error:e=>{
-											ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
-											ht += JSON.stringify(e,null,'\t') ;
-											$('#api-testing-message').html(ht+'</pre>') ;
-											access() ;
-										}
+
+						picogw.callproc({
+							method:'GET'
+							,path:API_PREFIX+path_real
+							,args:{option:'true'}
+						}).then(function(json){
+							let ht = '<pre>' ;
+							let access_queue = [] ;
+							for( let k in json ){
+								let path = API_PREFIX+path_real+k ;
+								access_queue.push({method:'GET',path:path});
+								let test = json[k].option.test ;
+								if( test instanceof Array ){
+									test.forEach(te=>{
+										te.path = path ;
+										access_queue.push(te) ;
 									}) ;
 								}
-								access() ;
-								$( '#api-test-dialog' ).dialog({
-									modal: true
-									,buttons: {
-										Ok: function() {
-											$('#api-testing-message').html('') ;
-											access_queue = [] ;
-											$( this ).dialog( "close" );
-										}
+							}
+							function access(){
+								if( access_queue.length==0){
+									ht += '</pre><hr />API test completed.' ;
+									$('#api-testing-message').html(ht) ;
+									return ;
+								}
+								const acss = access_queue.shift() ;
+								//let ac_url = API_PREFIX+path_real+
+								ht += `${acss.method} ${acss.path}${acss.args==undefined?'':' '+JSON.stringify(acss.args)} :` ;
+								$('#api-testing-message').html(ht+'</pre>') ;
+								let starttime = (new Date()).getTime() ;
+								$.ajax({type:acss.method,url:acss.path,data:acss.args,dataType:'json',
+									success:json=>{
+										ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
+										ht += JSON.stringify(json)+'\n' ;
+										$('#api-testing-message').html(ht+'</pre>') ;
+										if( acss.wait==null ) access() ;
+										else setTimeout(access,acss.wait) ;
 									}
-									///,width:'80%',height:'80%'
-								});
+									,error:e=>{
+										ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
+										ht += JSON.stringify(e,null,'\t') ;
+										$('#api-testing-message').html(ht+'</pre>') ;
+										if( acss.wait==null ) access() ;
+										else setTimeout(access,acss.wait) ;
+										//access() ;
+									}
+								}) ;
 							}
-							,error:e=>{
-								alert('API call failed:'+API_PREFIX+path_real) ;
-							}
+							access() ;
+							$( '#api-test-dialog' ).dialog({
+								modal: true
+								,buttons: {
+									Ok: function() {
+										$('#api-testing-message').html('') ;
+										access_queue = [] ;
+										$( this ).dialog( "close" );
+									}
+								}
+								///,width:'80%',height:'80%'
+							});
+						}).catch(e=>{
+							alert('API call failed:'+API_PREFIX+path_real) ;
 						}) ;
 
 					}} ;
@@ -350,11 +366,11 @@ onload = function(){
 <!-- script>
 // Non-GET method test.
 	$.ajax({
-		type: 'DELETE'
-		,url: '/v1/db'
-		,data: {value:'日本語データ'}
+		type: 'PUT'
+		,url: '/v1/echonet/Buzzer_1/SoundGeneratingSet'
+		,data: {value:[0x41]}
 		,success: content=>{
-			alert(JSON.stringify(content,null,'\t')) ;
+			//alert(JSON.stringify(content,null,'\t')) ;
 		}
 		,error: err=>{ alert(JSON.stringify(err,null,'\t')) ; }
 	});

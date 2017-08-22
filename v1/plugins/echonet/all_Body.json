@@ -4868,6 +4868,10 @@
 								}
 							}
 						}
+					],
+					"test": [
+						{"method":"PUT","args":{"value":"on"},"wait":3000}
+						,{"method":"PUT","args":{"value":"off"}}
 					]
 				},
 				"0x8F": {
