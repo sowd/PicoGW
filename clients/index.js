@@ -28,7 +28,7 @@ exports.clientFactory = function(client_name){
 			// Prohibit access to settings.json (Allowed only for websocket connection.)
 			if( methodname == 'callproc' && (
 				(arg.method.toUpperCase() == 'POST' && arg.path.slice(-9)=='/settings')
-				|| (arg.method.toUpperCase() == 'GET' && arg.args.option == 'true')
+				|| (arg.method.toUpperCase() == 'GET' && arg.args != null && arg.args.option == 'true')
 			) ){
 				return Promise.reject({error:'The API call is prohibited.'}) ;
 			}
