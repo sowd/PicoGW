@@ -55,9 +55,9 @@ exports.PluginInterface = class {
 	}
 
 
-	getPubKey(){ return globals.admin.getPubKey() ; }
-	encrypt(){ return globals.admin.getPubKey() ; }
-	decrypt(){ return globals.admin.decrypt() ; }
+	getPubKey(){ return globals.getPubKey() ; }
+	encrypt(str){ return globals.encrypt(str) ; }
+	decrypt(str){ return globals.decrypt(str) ; }
 	// handlerName = 'SettingsUpdated', etc...
 	on(handlerName,handler_body){ this['on'+handlerName] = handler_body ; }
 	off(handlerName){ delete this['on'+handlerName] ; this['on'+handlerName] = undefined ;}
