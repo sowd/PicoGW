@@ -292,8 +292,9 @@ exports.init = function(pi /*,globals*/){
 						else 							epco = ELDB[seoj].epcs[epc_hex] ;
 						var ret = {epc:parseInt('0x'+epc_hex) , epcName : epco.epcName , success:'SetC request accepted.'} ;
 						var cache = tgt[epco.epcType] ;
-						if( cache.cache ){
-							ret.cache_edt = cache.cache ; ret.cache_timestamp = cache.timestamp ;
+						if( cache != null && cache.cache ){
+							ret.cache_edt = cache.cache ;
+							ret.cache_timestamp = cache.timestamp ;
 							var convfuncs = epco.edtConvFuncs ;//|| ELDB['0000'].epcs[epc_hex].edtConvFuncs ;
 							if( convfuncs != undefined )
 								ret.cache_value = convfuncs[0](cache.cache) ;
@@ -522,6 +523,7 @@ function sendFrame( ip, tid, seoj, deoj, esv, properties ){
 function onProcCall( method , path /*_devid , propname*/ , args ){
 	let path_split = path.split('/') ;
 	const _devid = path_split.shift() ;
+	if( path_split.length>=2 ) method = path_split.pop().toUpperCase() ;
 	const propname = path_split.join('/') ;
 
 	if( _devid == '' || propname == '' ){
