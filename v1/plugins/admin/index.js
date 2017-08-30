@@ -210,7 +210,7 @@ exports.init = function(pi){
 					commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
 						,'type','wifi','ifname', interf, 'ssid'
 						,(ss.apname_manual.trim().length==0 ? ss.apname : ss.apname_manual.trim())]) ;
-				} else if( interf.indexOf('eth')==0 )
+				} else //if( interf.indexOf('eth')==0 )
 					commands.push(['nmcli','connection','add','con-name',NMCLI_CONNECTION_NAME
 					 ,'type','ethernet','ifname', interf]) ;
 
@@ -237,6 +237,15 @@ exports.init = function(pi){
 				//commands.push(['nmcli','connection','down', NMCLI_CONNECTION_NAME]) ;
 				commands.push(['nmcli','connection','up'  , NMCLI_CONNECTION_NAME]) ;
 
+				if(newSettings.server_power != 'none'){
+					commands.push([]) ;	// Accept and save settings first
+					if(newSettings.server_power == 'reboot')
+						commands.push(['reboot']) ;
+					if(newSettings.server_power == 'shutdown')
+						commands.push(['shutdown','-h','now']) ;
+					newSettings.server_power = 'none' ;
+				}
+
 				//log('Commands:') ;
 				//log(JSON.stringify(commands,null,'\t')) ;
 
@@ -248,6 +257,10 @@ exports.init = function(pi){
 						return ;
 					}
 					let cmd = commands.shift() ;
+					if( cmd.length == 0 ){
+						ac();ex() ;
+						return ;
+					}
 					//log('Exec:'+cmd.join(" ")) ;
 					let child = sudo(cmd,{password:root_pwd}) ;
 					child.stderr.on('data',dat=>{

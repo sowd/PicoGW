@@ -43,6 +43,12 @@
 				}
 			]
 		}
+		,"server_power": {
+			"title": "Server power after network setting (PicoGW may not reboot if not configured as so)"
+			,"type": "string"
+			,"default":"none"
+			,"enum":["none","reboot","shutdown"]
+		}
 		,"root_passwd": {
 			"title": "Sudo password"
 			,"description": "Necessary to change network setup"
