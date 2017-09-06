@@ -57,13 +57,15 @@ The external libraries used and their licenses are listed in <a href='https://gi
 <script src='js/marked.min.js'></script>
 <script src="js/spin.min.js"></script>
 <script src='js/cryptico.min.js'></script>
-<script src='websock.js'></script>
+<script src='js/websock.js'></script>
 <script>
 
 const API_PREFIX = '/v1' ;
 var log = console.log ;
 var res_tree = $('#resource_tree') ;
 var node_properties = {'.':{isleaf:false, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/}} ;
+
+let picogw ;
 
 const RSA_PUB_KEY = __%%RSA_PUB_KEY%%__ ;
 const ADDITIONAL_LICENSES_LINK = __%%ADDITIONAL_LICENSES%%__ ;
@@ -127,7 +129,8 @@ function t_open(path){
 let bInitialized = false ;
 
 onload = function(){
-	connectws(()=>{
+	connectws(_picogw=>{
+		picogw = _picogw ;
 		if( bInitialized ) return ;
 		bInitialized = true ;
 

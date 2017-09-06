@@ -1,7 +1,7 @@
 // Websocket connection
 /*
 Initialize:
-	connectws( function(){	// Initialized callback can called multiple times if disconnected
+	connectws( function(picogw){	// Initialized callback can called multiple times if disconnected
 	}) ;
 
 CallProc:
@@ -28,19 +28,20 @@ Unsubscribe:
 	picogw.unsub('/v1/echonet/GenericIllumination_1/OperatingState/',func);
 */
 
-let picogw ;
 
-function connectws(onconnect_func /* can be called multiple times */){
-    console.log('Trying to connect to '+location.host+'...') ;
+function connectws(onconnect_func /* can be called multiple times */ , hostname ){
+	if( hostname == null ) hostname = location.host ;
+    console.log('Trying to connect to '+hostname+'...') ;
 	start_spinner();
 
-    let connection = new WebSocket('ws://'+location.host ,['picogw']);
+    let connection = new WebSocket('ws://'+hostname ,['picogw']);
 
     let tid = 0 ;
     let waitlist = {} ;
     let sublist = {} ;
+
 	connection.onopen = function () {
-		picogw = {
+		let picogw = {
 			callproc : args=>{
 				return new Promise((ac,rj)=>{
 					args.tid = tid ;
@@ -63,23 +64,28 @@ function connectws(onconnect_func /* can be called multiple times */){
 				if( sublist[path].callbacks.indexOf(callback)<0)
 					sublist[path].callbacks.push(callback) ;
 			}
-			, unsub : (path,callback) => {
-				if( path.slice(-1) == '/') path = path.slice(0,-1) ;
-				if( sublist[path]==undefined ) return ;
-				if( callback != undefined ){
-					let pos = sublist[path].callbacks.indexOf(callback) ;
-					if( pos >= 0)
-						sublist[path].callbacks.splice( pos,1 ) ;
+			, unsub : (_path,callback) => {
+				function unsubmain(path){
+					if( path.slice(-1) == '/') path = path.slice(0,-1) ;
+					if( sublist[path]==undefined ) return ;
+					if( callback != undefined ){
+						let pos = sublist[path].callbacks.indexOf(callback) ;
+						if( pos >= 0)
+							sublist[path].callbacks.splice( pos,1 ) ;
+					}
+					if( callback == undefined || sublist[path].callbacks.length == 0){
+						connection.send(JSON.stringify({method:'UNSUB',path:path})) ;
+						delete sublist[path] ;
+					}
 				}
-				if( callback == undefined || sublist[path].callbacks.length == 0){
-					connection.send(JSON.stringify({method:'UNSUB',path:path})) ;
-					delete sublist[path] ;
-				}
+				if(_path != null) unsubmain(_path) ;
+				else for( _path in sublist )
+					unsubmain(_path) ;
 			}
 		}
 		stop_spinner();
 	    console.log('Connected to '+location.host+'.') ;
-		onconnect_func() ;
+		onconnect_func(picogw) ;
 	};
 	connection.onmessage = function (e) {
 		//console.log('Server: ' + JSON.stringify(JSON.parse(e.data),null,"\t")) ;
@@ -109,7 +115,7 @@ function connectws(onconnect_func /* can be called multiple times */){
 			waitlist[tid][1]({error:'Connection closed.'}) ;
     	waitlist = {} ;
     	sublist = {} ;
-    	picogw = undefined ;
+    	//picogw = undefined ;
 		console.log('Websocket disconnected. Retrying in 3 secs.') ;
 		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
 	}

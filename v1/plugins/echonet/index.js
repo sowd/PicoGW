@@ -427,7 +427,7 @@ function setPropVal(devid,epc_hex,edt_array){
 		setTimeout(()=>{
 			if( procCallWaitList[tid_key] == ac){
 				delete procCallWaitList[tid_key] ;
-				rj( {error:`GET request timeout:${devid}/${epc_hex}`} ) ;
+				rj( {error:`PUT request timeout:${devid}/${epc_hex}=>${JSON.stringify(edt_array)}`} ) ;
 			}
 		},GET_TIMEOUT) ;
 	}) ;

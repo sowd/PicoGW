@@ -150,9 +150,9 @@ exports.callproc = function(params){
 					.catch(re=>{ if( !bReplied ){ bReplied = true ; rj(re); } }) ;
 				setTimeout(()=>{if( !bReplied ){ bReplied = true ; rj({error:`GET request timeout:${ppath}`})}}
 					,CALL_TIMEOUT) ;
-			} else rj('Procedure callback is not defined for the plugin '+pprefix) ;
+			} else rj({error:'Procedure callback is not defined for the plugin '+pprefix}) ;
 		} catch(e){
-			rj('Invalidly formatted procedure: ' + procedure);
+			rj({error:'Invalidly formatted procedure: ' + procedure});
 		} ;
 	}) ;
 } ;
