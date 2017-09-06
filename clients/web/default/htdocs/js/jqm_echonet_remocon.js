@@ -123,6 +123,7 @@ function slider_setup(dev_path,sliderSettings,cache){
 	$(`#${propName}`).attr('min',propMin) ;
 	$(`#${propName}`).attr('max',propMax) ;
 	$(`#${propName}`).attr('value',cache) ;
+	$(`#${propName}`).slider('refresh') ;
 
 	picogw.sub(dev_path+'/'+propName,re=>{
 		$(`#${propName}`).val(re[dev_path+'/'+propName].value).slider('refresh');
