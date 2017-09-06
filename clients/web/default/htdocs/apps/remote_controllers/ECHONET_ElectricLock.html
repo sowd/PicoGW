@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>ECHONET Electric Lock controller</title>
+	<link rel="stylesheet" href="/js/jquery.mobile-1.4.5/css/themes/default/jquery.mobile-1.4.5.min.css">
+	<link rel="shortcut icon" href="/favicon.ico">
+	<script src="/js/jquery.mobile-1.4.5/jquery.min.js"></script>
+	<script src="/js/jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	<script src="/js/spin.min.js"></script>
+	<script src='/js/websock.js'></script>
+	<script>
+	const SimpleEnumProperties = ['LockSetting1'] ;
+	const SliderProperties = [] ;
+	const DevNamePrefix = 'ElectricLock_' ;
+	const IconURL = 'ECHONET_HousingFacilitiesGroup.png' ;
+	</script>
+</head>
+
+<body>
+<div data-role="page" id='mainpage'>
+	<div data-role="header" style="text-align:center;"><h1>EL Electric Lock</h1></div>
+	<div role="main" class="ui-content" id='mainpage-body'>
+	<ul data-role="listview" data-inset="true" id='devlist'>
+	No electric lock is available.
+	</ul>
+	</div>
+</div>
+
+<div data-role="page" id='controlpage'>
+	<div data-role="header" style="text-align:center;">
+	<a href="#mainpage" class="ui-btn-left ui-btn ui-btn-inline ui-mini ui-corner-all ui-btn-icon-left ui-icon-back">Back</a>
+	<h1>EL Electric Lock</h1></div>
+	<div role="main" class="ui-content">
+		<form id='frm'>
+		<!-- Power -->
+		<fieldset data-role="controlgroup" data-type="horizontal" style='width:100%'>
+			<input type="radio" name="LockSetting1" id="LockSetting1-locked" value="locked">
+		    <label for="LockSetting1-locked">Locked</label>
+		    <input type="radio" name="LockSetting1" id="LockSetting1-unlocked" value="unlocked">
+		    <label for="LockSetting1-unlocked">Unlocked</label>
+		</fieldset>
+		</form>
+	</div>
+</div>
+</body>
+<script src='/js/jqm_echonet_remocon.js'></script>
+</html>
