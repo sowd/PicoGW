@@ -9,7 +9,7 @@ if( location.search.length>0 ){
 
 
 let picogw ;
-let bInitialized = false ;
+//let bInitialized = false ;
 let devices ;
 
 const DescriptionProperties = ['OperatingState','InstallationLocation','ManufacturerCode'] ;
@@ -23,8 +23,8 @@ onload = function(){
 	connectws(_picogw=>{
 		picogw = _picogw ;
 
-		if( bInitialized ) return ;
-		bInitialized = true ;
+		//if( bInitialized ) return ;
+		//bInitialized = true ;
 
 		// Search echonet lite aircons
 		const pathprefix = '/v1/echonet' ;
