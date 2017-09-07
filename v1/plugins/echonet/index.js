@@ -543,7 +543,7 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
 					Promise.all([onProcCall_Get( method , devid , propname , args )])
-						.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
+						.then( re=>{ ac([devid,re[0]]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
 				re.forEach(_re=>{
@@ -558,7 +558,7 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 		return new Promise( (acpt,rjct)=>{
 			Promise.all( devids.map(devid=>new Promise( (ac,rj)=>{
 				Promise.all([onProcCall_Put( method , devid , propname , args )])
-					.then( re=>{ ac([devid,re]) ; }).catch(err=>{ac([devid,err]);}) ;
+					.then( re=>{ ac([devid,re[0]]) ; }).catch(err=>{ac([devid,err]);}) ;
 			})) ).then(re=>{
 				var res = {} ;
 				re.forEach(_re=>{
