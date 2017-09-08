@@ -192,6 +192,7 @@ exports.eojs = {
 	,'0011':{	// Temp sensor
 		'e0':[ x=>{let n = toInt(x); return 0.1*(n<0x8000?n:n-0x10000) ;} ]		// Temperature
 	}
+
 	,'0130':{
 		'b0': [ x=>enum_forward(x,AIRCON_MODE_LIST) , x=>enum_backward(x,AIRCON_MODE_LIST) ]
 		,'b1':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
@@ -443,6 +444,11 @@ exports.eojs = {
 		,'91':[ hm_forward,hm_backward]
 		,'94':[ x=>enum_forward(x,ON_OFF_41),x=>enum_backward(x,ON_OFF_41)]
 		,'95':[ hm_forward,hm_backward]
+	}
+
+	,'02a0':{	// Buzzer
+		'b1':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
+		,'e0':[ x=>(x[0]-0x30) , x=>[parseInt(x)+0x30] ]
 	}
 
 	,'05fd':{	// Switch class

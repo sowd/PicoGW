@@ -94,8 +94,10 @@ function simple_enum_setup(dev_path,propname,cache){
 		//console.log(`${propname} : ${newval}`) ;
 	} ;
 
-	// Property does not exist or the cache value is not obtained yet
-	if( cache == null ) return handler ;
+	if( cache == null ){
+		$(`#${propname} input[type='radio']`).checkboxradio('disable');
+		return handler ;
+	}
 	prev_cval = cache.cache_value ;
 
 	$(`#${propname}-${prev_cval}`).attr('checked','checked') ;
@@ -114,13 +116,12 @@ function simple_enum_setup(dev_path,propname,cache){
 	return handler ;
 }
 
-//<input type="range" name="TemperatureSetValue" id="TemperatureSetValue" min="0" max="50" value="25">
-
 function slider_setup(dev_path,propName,cache){
 	if( cache != null ){
 		$(`#${propName}`).attr('value',cache.cache_value) ;
 		$(`#${propName}`).slider('refresh') ;
-	}
+	} else
+		$(`#${propName}`).slider('disable');
 
 	picogw.sub(dev_path+'/'+propName,re=>{
 		$(`#${propName}`).val(re[dev_path+'/'+propName].value).slider('refresh');
