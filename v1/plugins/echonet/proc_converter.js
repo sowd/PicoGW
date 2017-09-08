@@ -219,7 +219,7 @@ exports.eojs = {
 		,'96':[ hm_forward,hm_backward]
 	}
 
-	,'0260':{	// E shutter
+	,'0260':{	// E blind
 		 '90':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
 		,'c2':[ x=>enum_forward(x,AVAILABILITY) ]
 		,'c3':[ x=>enum_forward(x,AVAILABILITY) ]
@@ -235,7 +235,6 @@ exports.eojs = {
 		,'e8':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
 		,'e9':[ x=>enum_forward(x,SHUTTER_SELECTIVE_OPEN) , x=>enum_backward(x,SHUTTER_SELECTIVE_OPEN) ]
 		,'ea':[ x=>enum_forward(x,SHUTTER_OPENNESS) ]
-		,'ed':[ x=>x[0] , x=>[parseInt(x)] ]
 		,'ee':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
 		,'ef':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
 	}
@@ -253,7 +252,25 @@ exports.eojs = {
 		,'e8':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
 		,'e9':[ x=>enum_forward(x,SHUTTER_SELECTIVE_OPEN) , x=>enum_backward(x,SHUTTER_SELECTIVE_OPEN) ]
 		,'ea':[ x=>enum_forward(x,SHUTTER_OPENNESS) ]
-		,'ed':[ x=>x[0] , x=>[parseInt(x)] ]
+		,'ed':[ x=>(x[0]-0x30) , x=>[parseInt(x)+0x30] ]
+		,'ee':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
+		,'ef':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
+	}
+
+	,'0263':{	// E shutter
+		 '90':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
+		,'d0':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
+		,'d1':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
+		,'d2':[ x=>x[0] , x=>[parseInt(x)] ]
+		,'e0':[ x=>enum_forward(x,OPEN_CLOSE_41) , x=>enum_backward(x,OPEN_CLOSE_41) ]
+		,'e1':[ x=>x[0] , x=>[parseInt(x)] ]
+		,'e2':[ x=>x[0] , x=>[parseInt(x)] ]
+		,'e3':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
+		,'e5':[ x=>enum_forward(x,LOCK_STATE) , x=>enum_backward(x,LOCK_STATE) ]
+		,'e8':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
+		,'e9':[ x=>enum_forward(x,SHUTTER_SELECTIVE_OPEN) , x=>enum_backward(x,SHUTTER_SELECTIVE_OPEN) ]
+		,'ea':[ x=>enum_forward(x,SHUTTER_OPENNESS) ]
+		,'ed':[ x=>(x[0]-0x30) , x=>[parseInt(x)+0x30] ]
 		,'ee':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
 		,'ef':[ x=>enum_forward(x,LEVEL3) , x=>enum_backward(x,LEVEL3) ]
 	}

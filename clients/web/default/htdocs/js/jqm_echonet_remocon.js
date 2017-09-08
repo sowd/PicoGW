@@ -81,14 +81,23 @@ onload = function(){
 } ;
 
 function simple_enum_setup(dev_path,propname,cache){
-	if( cache == null ){
-		// Property does not exist
-		return ;
-	}
+	let prev_cval ;
 
-	let prev_cval = cache.cache_value ;
-	if( prev_cval == null )
-		return ;	// Cache value is not obtained yet
+	function handler(newval){
+		start_spinner();
+		picogw.callproc({
+			method:'PUT'
+			,path:dev_path+'/'+propname
+			,args:{value:newval}
+		}).then(re=>{stop_spinner();console.log(re);}).catch(e=>{stop_spinner();});
+		prev_cval = newval ;
+		//console.log(`${propname} : ${newval}`) ;
+	} ;
+
+	// Property does not exist or the cache value is not obtained yet
+	if( cache == null ) return handler ;
+	prev_cval = cache.cache_value ;
+
 	$(`#${propname}-${prev_cval}`).attr('checked','checked') ;
 	$(`label[for='${propname}-${prev_cval}']`).addClass('ui-btn-active') ;
 	//$(`#${propname}-${prev_cval}`).removeAttr('checked') ;
@@ -102,28 +111,16 @@ function simple_enum_setup(dev_path,propname,cache){
 	});
 
 	// Set handler
-	return newval=>{
-		start_spinner();
-		picogw.callproc({
-			method:'PUT'
-			,path:dev_path+'/'+propname
-			,args:{value:newval}
-		}).then(re=>{stop_spinner();console.log(re);}).catch(e=>{stop_spinner();});
-		prev_cval = newval ;
-		//console.log(`${propname} : ${newval}`) ;
-	} ;
+	return handler ;
 }
 
 //<input type="range" name="TemperatureSetValue" id="TemperatureSetValue" min="0" max="50" value="25">
 
-function slider_setup(dev_path,sliderSettings,cache){
-	const propName = sliderSettings[0] ;
-	const propMin = sliderSettings[1] , propMax = sliderSettings[2] ;
-	if( cache == null ) cache = propMin ;
-	$(`#${propName}`).attr('min',propMin) ;
-	$(`#${propName}`).attr('max',propMax) ;
-	$(`#${propName}`).attr('value',cache) ;
-	$(`#${propName}`).slider('refresh') ;
+function slider_setup(dev_path,propName,cache){
+	if( cache != null ){
+		$(`#${propName}`).attr('value',cache.cache_value) ;
+		$(`#${propName}`).slider('refresh') ;
+	}
 
 	picogw.sub(dev_path+'/'+propName,re=>{
 		$(`#${propName}`).val(re[dev_path+'/'+propName].value).slider('refresh');
@@ -162,8 +159,8 @@ $("#controlpage").on("pagebeforeshow",function(event) {
 		}) ;
 
 		// Slider properties
-		SliderProperties.forEach(sliderSettings=>{
-			set_handlers[sliderSettings[0]] = slider_setup(dev_path,sliderSettings,devCache[sliderSettings[0]].cache_value) ;
+		SliderProperties.forEach(pname=>{
+			set_handlers[pname] = slider_setup(dev_path,pname,devCache[pname]) ;
 		}) ;
 	}
 
@@ -183,8 +180,8 @@ $(document).on('change', '[type="radio"]', function(){
 	} catch(e){}
 });
 
-SliderProperties.forEach(sliderSettings=>{
-	$('#frm').on('slidestop','#'+sliderSettings[0], function(){ 
+SliderProperties.forEach(pname=>{
+	$('#frm').on('slidestop','#'+pname, function(){ 
 		try {
 			set_handlers[this.name](parseInt(this.value)) ;
 		} catch(e){}

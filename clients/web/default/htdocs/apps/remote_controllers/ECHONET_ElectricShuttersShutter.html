@@ -13,8 +13,8 @@
 	<script src='/js/websock.js'></script>
 	<script>
 	const SimpleEnumProperties = ['OpeningAndClosingOperationSetting'] ;
-	const SliderProperties = ['OpeningLevelSetting','BlindAngleSetting'] ;
-	const DevNamePrefix = 'ElectricBlindSunshade_' ;
+	const SliderProperties = ['BlindAngleSetting'] ;
+	const DevNamePrefix = 'ElectricShuttersShutter_' ;
 	const IconURL = 'ECHONET_ElectricBlindSunshade.png' ;
 	</script>
 </head>
@@ -40,14 +40,13 @@
 			<input type="radio" name="OpeningAndClosingOperationSetting" id="OpeningAndClosingOperationSetting-open" value="open">
 		    <label for="OpeningAndClosingOperationSetting-open">Open</label>
 		    <input type="radio" name="OpeningAndClosingOperationSetting" id="OpeningAndClosingOperationSetting-stop" value="stop">
-		    <label for="OpeningAndClosingOperationSetting-stop">Stop</label>		    <input type="radio" name="OpeningAndClosingOperationSetting" id="OpeningAndClosingOperationSetting-close" value="close">
+		    <label for="OpeningAndClosingOperationSetting-stop">Stop</label>
+		    <input type="radio" name="OpeningAndClosingOperationSetting" id="OpeningAndClosingOperationSetting-close" value="close">
 		    <label for="OpeningAndClosingOperationSetting-close">Close</label>
 		</fieldset>
 
-		<label for="OpeningLevelSetting">Opening Level</label>
-		<input type="range" name="OpeningLevelSetting" id="OpeningLevelSetting" min="0" max="100" value="0"></input>
 		<label for="BlindAngleSetting">Angle</label>
-		<input type="range" name="BlindAngleSetting" id="BlindAngleSetting" min="0" max="180" value="90"></input>
+		<input type="range" name="BlindAngleSetting" id="BlindAngleSetting" min="0" max="180" value="0"></input>
 		</form>
 	</div>
 </div>
