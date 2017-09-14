@@ -36,6 +36,10 @@ onload = function(){
 			apps.forEach(app_info=>{
 				Promise.all(
 					app_info.required_paths.map(req_path=> new Promise((ac,rj)=>{
+						if( req_path == '*'){	// wildcard
+							ac({'/':{}});
+							return ;
+						}
 						if( req_path.slice(-1)=='/') req_path = req_path.slice(0,-1) ;
 						let req_path_elems = req_path.split('/') ;
 						let prop_prefix = req_path_elems.pop() ;
