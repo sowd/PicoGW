@@ -5,14 +5,12 @@ The primary distribution site is [here](https://github.com/KAIT-HEMS/PicoGW).
 
 # Installation & Running
 
-**Check your node.js version**
+**Check your node.js version**  
+The recommended version is over [v8.5.0](https://github.com/nodejs/node/issues/13581).
 
 ```bash
 $ node -v
 ```
-
-The recommended node.js version is v6.11.1. [Newer versions has a bug in libuv](https://github.com/nodejs/node/issues/13581). After the original distribution adopts the bugfix, PicoGW should also work on the newer version.
-<!-- We develop this software on node.js v7.6. If you are using an older version, we recommend to update to the latest one. -->
 
 **Setup**
 
