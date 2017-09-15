@@ -523,7 +523,11 @@ function sendFrame( ip, tid, seoj, deoj, esv, properties ){
 function onProcCall( method , path /*_devid , propname*/ , args ){
 	let path_split = path.split('/') ;
 	const _devid = path_split.shift() ;
-	if( path_split.length>=2 ) method = path_split.pop().toUpperCase() ;
+
+	if( path_split.length>=2 ){ // Dirty code, just for compatibility
+		method = path_split.pop().toUpperCase() ;
+		args.edt = args.value ;
+	}
 	const propname = path_split.join('/') ;
 
 	if( _devid == '' || propname == '' ){
@@ -729,8 +733,8 @@ function onProcCall_Get( method , devid , propname , args ){
 }
 
 function onProcCall_Put( method , devid , propname , args ){
-	if( devid == '' || propname == '' || args==undefined || args.value==undefined)
-		return {error:`Device id, property name, and the argument "value" must be provided for ${method} method.`} ;
+	if( devid == '' || propname == '' || args==undefined || (args.value==undefined && args.edt == undefined ))
+		return {error:`Device id, property name, and the argument "value" or "edt" must be provided for ${method} method.`} ;
 
 	var mac = getMacFromDeviceId(devid) ;
 	if( mac == undefined )	return {error:'No such device:'+devid} ;
@@ -760,24 +764,16 @@ function onProcCall_Put( method , devid , propname , args ){
 			edtConvFunc = epco.edtConvFuncs[1] ;
 	}
 
-	while(true){
-		if( typeof args.value == 'string' ){
-			try {
-				args.value = JSON.parse(args.value) ;
-				continue ;
-			} catch(e){}
+	if( args.edt != null ){
+		if( ! (args.edt instanceof Array) ){
+			if( isNaN(args.edt) || !isFinite(args.edt) )
+				return {error:'edt is not a number nor number array'} ;
+			args.edt = [args.edt];
 		}
-		if( args.value instanceof Array ){
-			args.value = args.value.map( elem=> {
-				if(isFinite(parseInt(elem)))
-					return parseInt(elem) ;
-				return elem;
-			} ) ;
-		}
-		break ;
-	}
-	let edt = (edtConvFunc != undefined && !(args.value instanceof Array) && !isFinite(parseInt(args.value[0]))
-		? edtConvFunc(args.value) : args.value) ;
+	} else if(edtConvFunc != undefined){
+		args.edt = edtConvFunc(args.value) ;
+	} else
+		return {error:'No converter to generate edt from value.'} ;
 
-	return setPropVal(devid,epc_hex,edt) ;
+	return setPropVal(devid,epc_hex,args.edt) ;
 }

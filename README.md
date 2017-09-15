@@ -142,12 +142,15 @@ This will set a new value (EDT) to the property. Thew new value is specified in 
 
 >{"value":NEWVAL}
 
+You can also specify the ECHONET Lite binary array directly.
+
+>{"edt":[48]}
+
 This request header must contain "Content-type: application/json".  
-There are serveral ways to specify NEWVAL:
-1. An array of bytes in decimal digit such as **[48]**.
-2. If you want to set it as a hex array, each hex number should be specifies as a string such as **["0x30"]**.
-3. If the length of the array is exactly one, you can directly write the element itself such as **48** or **"0x30"**.
-4. Exceptionally, some properties supports more meaningful string such as **"on"** or **"off"**.
+
+There are several kinds of NEWVALs specify-able, depending on the definition. For example, OperatingState accepts the string "**on**" or "**off**", while air-conditioner's TemperatureSetValue accepts the temperature value as a number directly. The complete list of available values is in v1/plugins/echonet/proc_converter.js (See also all_Body.json to correspond ECHONET ID number to PicoGW name.)  
+
+**edt** field only accepts the array of decimal digit such as **[48]**.
 
 #### GET /v1/echonet/[REGEXP]/[PropertyID]
 

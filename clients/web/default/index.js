@@ -59,7 +59,6 @@ exports.init = function(_clientInterface,_globals,_almightyClientInterface){
 				// 多分常に文字列。JSONオブジェクトに変換できるときはオブジェクトに、数値に変換できる
 				// 時は数値に、それ以外はそのまま文字列として、プラグインに与える。
 				if( typeof args.value == 'string' ){
-					let v ;
 					try {
 						args.value = JSON.parse(args.value);
 					} catch(e){
