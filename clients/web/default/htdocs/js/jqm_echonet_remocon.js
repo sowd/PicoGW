@@ -1,4 +1,4 @@
-let urlVars = {} ;
+ let urlVars = {} ;
 if( location.search.length>0 ){
 	let eqs = location.search.substring(1).split('&') ;
 	eqs.forEach(function(eq){
