@@ -22,6 +22,7 @@ onload = function(){
 		$('#mainpage').page() ;
 		return ;
 	}
+
 	let timer_id ;
 
 	connectws({
