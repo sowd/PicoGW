@@ -58,11 +58,13 @@ exports.init = function(_clientInterface,_globals,_almightyClientInterface){
 
 				// 多分常に文字列。JSONオブジェクトに変換できるときはオブジェクトに、数値に変換できる
 				// 時は数値に、それ以外はそのまま文字列として、プラグインに与える。
-				if( typeof args.value == 'string' ){
-					try {
-						args.value = JSON.parse(args.value);
-					} catch(e){
-						if( isFinite(parseInt(args.value)) )	args.value = parseInt(args.value) ;
+				for( let k in args ){
+					if( typeof args[k] == 'string' ){
+						try {
+							args[k] = JSON.parse(args[k]);
+						} catch(e){
+							if( isFinite(parseInt(args[k])) )	args[k] = parseInt(args[k]) ;
+						}
 					}
 				}
 				clientInterface.callproc({method:req.method,path:req.path,args:args})
