@@ -15,69 +15,101 @@ let devices ;
 const DescriptionProperties = ['OperatingState','InstallationLocation','ManufacturerCode'] ;
 
 onload = function(){
+	const POLL_INTERVAL = 10*1000 ;
+
 	if( urlVars.ip == null ){
 		$('#mainpage-body').html('<div align="center"><h2>PicoGW IP address should be specified.</h2></div>') ;
 		$('#mainpage').page() ;
 		return ;
 	}
-	connectws(_picogw=>{
-		picogw = _picogw ;
+	let timer_id ;
 
-		//if( bInitialized ) return ;
-		//bInitialized = true ;
+	connectws({
+		onconnect : _picogw=>{
+			picogw = _picogw ;
 
-		// Search echonet lite aircons
-		const pathprefix = '/v1/echonet' ;
-		start_spinner();
-		picogw.callproc({
-			method:'GET'
-			,path: pathprefix
-		}).then(devhash=>{
-			stop_spinner();
-			let devlist = [] ;
-			for( let dev in devhash ){
-				if( dev.indexOf(DevNamePrefix) == 0 )
-					devlist.push(dev) ;
-			}
-			if( devlist.length == 0 )	return ;
+			//if( bInitialized ) return ;
+			//bInitialized = true ;
 
-			devices = {} ;
+			// Search echonet lite aircons
+			const pathprefix = '/v1/echonet' ;
 			start_spinner();
-			Promise.all(devlist.map(dev=>new Promise((ac,rj)=>{
-				picogw.callproc({
-					method:'GET'
-					,path: pathprefix+'/'+dev
-				}).then(cache=>{
-					devices[pathprefix+'/'+dev] = cache ;
-					ac() ;
-				}).catch(e=>{
-					ac() ;
-				});
-			}))).then(()=>{
+			picogw.callproc({
+				method:'GET'
+				,path: pathprefix
+			}).then(devhash=>{
 				stop_spinner();
-				let ht = '' ;
-				for( let path in devices ){
-					let desc = '' ;
-					DescriptionProperties.forEach(elem=>{
-						try {
-							desc += ` ${elem} = ${devices[path][elem].cache_value} :`
-						} catch(e){}
-					}) ;
+				let devlist = [] ;
+				for( let dev in devhash ){
+					if( dev.indexOf(DevNamePrefix) == 0 )
+						devlist.push(dev) ;
+				}
+				if( devlist.length == 0 )	return ;
 
-					ht += `<li><a href="#controlpage" onclick="on_dev_selected('${path}')">`
-						+`<img src="${IconURL}"></img><h2>${path.split('/').slice(-1)[0]}</h2>`
-						+`<p>${desc.slice(0,-1)}</p>`	 // Remove last ','
-						+`</a></li>` ;
-				} ;
+				devices = {} ;
+				start_spinner();
+				Promise.all(devlist.map(dev=>new Promise((ac,rj)=>{
+					picogw.callproc({
+						method:'GET'
+						,path: pathprefix+'/'+dev
+					}).then(cache=>{
+						devices[pathprefix+'/'+dev] = cache ;
+						ac() ;
+					}).catch(e=>{
+						ac() ;
+					});
+				}))).then(()=>{
+					stop_spinner();
+					let ht = '' ;
+					for( let path in devices ){
+						let desc = '' ;
+						DescriptionProperties.forEach(elem=>{
+							try {
+								desc += ` ${elem} = ${devices[path][elem].cache_value} :`
+							} catch(e){}
+						}) ;
 
-				$('#devlist').html(ht).listview('refresh');
-			}).catch(e=>{stop_spinner();}) ;
-		}).catch(e=>{
-			stop_spinner();
-			$('#mainpage-body').html('Error in searching /v1/echonet/'+DevNamePrefix) ;
-			$('#mainpage').page();
-		}) ;
-	},urlVars.ip) ;
+						ht += `<li><a href="#controlpage" onclick="on_dev_selected('${path}')">`
+							+`<img src="${IconURL}"></img><h2>${path.split('/').slice(-1)[0]}</h2>`
+							+`<p>${desc.slice(0,-1)}</p>`	 // Remove last ','
+							+`</a></li>` ;
+					} ;
+
+					$('#devlist').html(ht).listview('refresh');
+
+
+					// Cache update GETs
+					if( NoAnnounceProperties instanceof Array && NoAnnounceProperties.length>0 ){
+						if( timer_id != null ) clearInterval(timer_id) ;
+						timer_id = setInterval(()=>{
+							let promises = [] ;
+							for( let path in devices ){
+								NoAnnounceProperties.forEach(pname=>{
+									promises.push(
+										picogw.callproc({
+											method:'GET'
+											,path: path+'/'+pname
+										})
+									) ;
+								}) ;
+							}
+
+							Promise.all(promises).catch(console.error) ;
+						},POLL_INTERVAL) ;
+					}
+				}).catch(e=>{stop_spinner();}) ;
+			}).catch(e=>{
+				stop_spinner();
+				$('#mainpage-body').html('Error in searching /v1/echonet/'+DevNamePrefix) ;
+				$('#mainpage').page();
+			}) ;
+		}
+		, ondisconnect : ()=>{
+			if(timer_id) clearInterval(timer_id) ;
+			timer_id = undefined ;
+		}
+		, hostname : urlVars.ip
+	}) ;
 } ;
 
 function simple_enum_setup(dev_path,propname,cache){

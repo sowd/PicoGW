@@ -51,9 +51,20 @@ exports.init = function(_clientInterface,_globals,_almightyClientInterface){
 						var terms = eq.split('=') ;
 						if( terms[0] == 'callback' || terms[0] == 'jsoncallback' )
 							return ;
-						if( terms.length == 1 ) args.value = terms[0] ;
+						if( terms.length == 1 ) args.value = decodeURIComponent(terms[0]) ;
 						else					args[terms[0]] = decodeURIComponent(terms[1]) ;
 					}) ;
+				}
+
+				// 多分常に文字列。JSONオブジェクトに変換できるときはオブジェクトに、数値に変換できる
+				// 時は数値に、それ以外はそのまま文字列として、プラグインに与える。
+				if( typeof args.value == 'string' ){
+					let v ;
+					try {
+						args.value = JSON.parse(args.value);
+					} catch(e){
+						if( isFinite(parseInt(args.value)) )	args.value = parseInt(args.value) ;
+					}
 				}
 				clientInterface.callproc({method:req.method,path:req.path,args:args})
 					.then( re=>{res.jsonp(re);} ).catch( re=>{res.jsonp(re);} /*console.error*/ ) ;

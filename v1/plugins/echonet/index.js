@@ -566,7 +566,7 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 					res[key]=_re[1];
 				}) ;
 				acpt(res) ;
-			})
+			}).catch(rjct);
 		}) ;
 		//return onProcCall_Put( method , devid , propname , args ) ;
 	}
@@ -760,26 +760,24 @@ function onProcCall_Put( method , devid , propname , args ){
 			edtConvFunc = epco.edtConvFuncs[1] ;
 	}
 
-	if( typeof args.value == 'string' ){
-		if( !isNaN(parseInt(args.value)) ) args.value = [parseInt(args.value)] ;
-		else {
+	while(true){
+		if( typeof args.value == 'string' ){
 			try {
 				args.value = JSON.parse(args.value) ;
-			} catch(e){
-				// Non-number string
-				if( edtConvFunc==undefined )
-					return {error:'value is not parse-able to JSON:'+args.value} ;
-				else
-					args.value = edtConvFunc(args.value) ;
-			}
+				continue ;
+			} catch(e){}
 		}
+		if( args.value instanceof Array ){
+			args.value = args.value.map( elem=> {
+				if(isFinite(parseInt(elem)))
+					return parseInt(elem) ;
+				return elem;
+			} ) ;
+		}
+		break ;
 	}
-
-	var edt = [] ;
-
-	if( args.value instanceof Array )	edt = args.value.map( elem=> (isFinite(elem) ? elem : parseInt(elem) )  ) ;
-	else if( isFinite(args.value) )		edt = [args.value] ;
-	else return {error:'Unknown format value :'+args.value} ;
+	let edt = (edtConvFunc != undefined && !(args.value instanceof Array) && !isFinite(parseInt(args.value[0]))
+		? edtConvFunc(args.value) : args.value) ;
 
 	return setPropVal(devid,epc_hex,edt) ;
 }

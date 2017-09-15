@@ -448,7 +448,7 @@ exports.eojs = {
 
 	,'02a0':{	// Buzzer
 		'b1':[ x=>enum_forward(x,ON_OFF_41) , x=>enum_backward(x,ON_OFF_41) ]
-		,'e0':[ x=>(x[0]-0x30) , x=>[parseInt(x)+0x30] ]
+		,'e0':[ x=>(x[0]-0x30) , x=>[x+0x30] ]
 	}
 
 	,'05fd':{	// Switch class

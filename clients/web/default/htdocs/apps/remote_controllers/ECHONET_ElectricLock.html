@@ -9,11 +9,11 @@
 	<link rel="shortcut icon" href="/favicon.ico">
 	<script src="/js/jquery.mobile-1.4.5/jquery.min.js"></script>
 	<script src="/js/jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.js"></script>
-	<script src="/js/spin.min.js"></script>
-	<script src='/js/websock.js'></script>
+	<script src='/js/picogw.js'></script>
 	<script>
 	const SimpleEnumProperties = ['LockSetting1','DoorOpeningAndClosingState','SetAutomaticLockingMode'] ;
 	const SliderProperties = [] ;
+	const NoAnnounceProperties = ['DoorOpeningAndClosingState','SetAutomaticLockingMode'] ;
 	const DevNamePrefix = 'ElectricLock_' ;
 	const IconURL = 'ECHONET_HousingFacilitiesGroup.png' ;
 	</script>
@@ -42,11 +42,11 @@
 		    <label for="LockSetting1-unlocked">Unlocked</label>
 		</fieldset>
 		<!-- Door -->
-		Door Open?
+		Door Open
 		<fieldset data-role="controlgroup" data-type="horizontal" style='width:100%' id='DoorOpeningAndClosingState'>
-			<input type="radio" name="DoorOpeningAndClosingState" id="DoorOpeningAndClosingState-open" value="open">
+			<input disabled="disabled" type="radio" name="DoorOpeningAndClosingState" id="DoorOpeningAndClosingState-open" value="open">
 		    <label for="DoorOpeningAndClosingState-open">Open</label>
-		    <input type="radio" name="DoorOpeningAndClosingState" id="DoorOpeningAndClosingState-close" value="close">
+		    <input disabled="disabled" type="radio" name="DoorOpeningAndClosingState" id="DoorOpeningAndClosingState-close" value="close">
 		    <label for="DoorOpeningAndClosingState-close">Close</label>
 		</fieldset>
 		<!-- SetAutomaticLockingMode -->
