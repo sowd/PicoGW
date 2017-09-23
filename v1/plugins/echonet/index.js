@@ -526,7 +526,8 @@ function onProcCall( method , path /*_devid , propname*/ , args ){
 
 	if( path_split.length>=2 ){ // Dirty code, just for compatibility
 		method = path_split.pop().toUpperCase() ;
-		args.edt = args.value ;
+		if( args.edt == null )
+			args.edt = args.value ;
 	}
 	const propname = path_split.join('/') ;
 

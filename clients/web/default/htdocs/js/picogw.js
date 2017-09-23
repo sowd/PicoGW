@@ -136,7 +136,13 @@ function connectws( arg1,arg2,arg3 ){
     	sublist = {} ;
     	//picogw = undefined ;
 		console.log('Websocket disconnected. Retrying in 3 secs.') ;
-		setTimeout(()=>{ connectws(onconnect_func) ; },3000) ;
+		setTimeout(()=>{
+			connectws({
+				onconnect : onconnect_func
+				, ondisconnect : ondisconnect_func
+				, hostname : hostname
+			}) ;
+		},3000) ;
 	}
 } ;
 
