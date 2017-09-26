@@ -63,6 +63,8 @@ function connectws( arg1,arg2,arg3 ){
 		let picogw = {
 			callproc : args=>{
 				return new Promise((ac,rj)=>{
+					if( typeof args == 'string' )
+						args = {method:'GET',path:args /*,args:{}*/} ;
 					args.tid = tid ;
 					waitlist[tid] = [ac,rj] ;
 					tid++ ;
