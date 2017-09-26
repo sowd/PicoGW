@@ -29,10 +29,16 @@ exports.PluginInterface = class {
 	setOnGetSettingsCallback(callback){ this.getSettings = callback ; }
 	setOnSettingsUpdatedCallback(callback){ this.onSettingsUpdated = callback ; }
 
-	publish ( /*devid,*/ topicname, args) {
-		if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
+	publish ( topicname, args) {
+		var path ;
+		if( topicname==null || topicname==='')
+			path = `/${globals.VERSION}/${this.prefix}` ;
+		else {
+			if( topicname.slice(-1)=='/') topicname=topicname.slice(0,-1) ;
+			path = `/${globals.VERSION}/${this.prefix}/${topicname}` ;
+		}
+
 		var re = {method:'PUB'} ;
-		var path = `/${globals.VERSION}/${this.prefix}/${topicname}` ;
 		//var path = `/${globals.VERSION}/${this.prefix}/${devid}/${topicname}` ;
 		re[path] = args ;
 		globals.PubSub.pub(path,re /*{method:'PUB',path:path,args:args}*/) ;
