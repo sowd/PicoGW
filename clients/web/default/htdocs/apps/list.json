@@ -55,7 +55,7 @@
 	}
 	,{
 		"title":"Node-RED"
-		,"description":"Node-RED GUI"
+		,"description":"Node-RED GUI. Run <b>enable_v2api.sh</b> in PicoGW root and reboot PicoGW to enable Node-RED communication"
 		,"icon":"/apps/node-red-icon.png"
 		,"required_paths":[
 			"*"
