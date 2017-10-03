@@ -83,7 +83,8 @@ onload = function(){
 
 						let ht = '' ;
 						active_apps.forEach(ap=>{
-							ht += `<li><a onclick="location.href='${ap.url}?ip=${location.host}&timestamp=${(new Date()).getTime()}'">`
+							let url = ap.url.split('%%_PICOGW_HOSTNAME_%%').join(location.hostname) ;
+							ht += `<li><a onclick="location.href='${url}?ip=${location.host}&timestamp=${(new Date()).getTime()}'">`
 								+`<img src="${ap.icon}"></img><h2>${ap.title}</h2>`
 								+`<p>${ap.description}</p></a></li>` ;
 						});

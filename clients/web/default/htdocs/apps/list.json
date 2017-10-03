@@ -53,4 +53,13 @@
 		]
 		,"url": "/apps/remote_controllers/ECHONET_Buzzer.html"
 	}
+	,{
+		"title":"Node-RED"
+		,"description":"Node-RED GUI"
+		,"icon":"/apps/node-red-icon.png"
+		,"required_paths":[
+			"*"
+		]
+		,"url": "http://%%_PICOGW_HOSTNAME_%%:1880"
+	}
 ]
