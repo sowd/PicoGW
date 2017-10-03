@@ -81,7 +81,7 @@ exports.init = function(_globals,_clientFactory){
 						var focus = readbuf.slice(0,ri) ;
 						readbuf = readbuf.slice(ri+1) ;
 
-						log('onData:'+focus) ;
+						//log('onData:'+focus) ;
 
 						try {
 							focus = JSON.parse(focus) ;
@@ -108,12 +108,7 @@ exports.init = function(_globals,_clientFactory){
 					    .on('close', ()=>{ kill_node_red() ;})
 				})
 			]).then(()=>{
-				//const readStream = streams[0] ;
-				//const writeStream = streams[1] ;
 				log('Connected to Node-RED.');
-
-
-
 
 				exports.callproc = function(params){
 					return new Promise((ac,rj)=>{
@@ -126,26 +121,6 @@ exports.init = function(_globals,_clientFactory){
 							reply_waitlist[params.reqid]({error:'Timeout'}) ;
 							delete reply_waitlist[params.reqid] ;
 						},CALL_TIMEOUT) ;
-
-	/*
-						while( params.path[params.path.length-1]=='/' ){
-							params.path = params.path.slice(0,-1) ;
-						}
-						let aliases = localStorage.getItem('aliases',{}) ;
-						if( params.path.length == 0 )
-							return Promise.resolve( aliases ) ;
-
-						for( let ppath in SPECIAL_PATHS )
-							if( params.path.indexOf(ppath) == 0 )
-								return SPECIAL_PATHS[ppath](params) ;
-
-						if( params.path.length == 0 || aliases[params.path] == undefined )
-							return Promise.resolve({error:`Alias ${params.path} not found`}) ;
-						// Found alias in the path
-						params.path = aliases[params.path] ;	// Replace path and proceed
-						return client.callproc(params) ;
-						*/
-
 					}) ;
 				} ;
 
