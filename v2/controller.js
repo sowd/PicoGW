@@ -87,10 +87,14 @@ exports.init = function(_globals,_clientFactory){
 							focus = JSON.parse(focus) ;
 							if( reply_waitlist[focus.reqid] != null){
 								const reqid = focus.reqid ;
-								delete focus.reqid ;
-								delete focus._msgid ;
-								reply_waitlist[reqid](focus) ;
+								let rep = { method:focus.method } ;
+								rep[focus.path] = {value:focus.value} ;
+								reply_waitlist[reqid](rep) ;
 								delete reply_waitlist[reqid] ;
+							} else if(focus.method=='PUB'){
+								let rep = { method:'PUB' } ;
+								rep[focus.path] = {value:focus.value} ;
+								globals.PubSub.pub(focus.path,rep) ;
 							}
 						} catch(e){}
 					});
