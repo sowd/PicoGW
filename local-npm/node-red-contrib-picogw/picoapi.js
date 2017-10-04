@@ -55,7 +55,7 @@ module.exports = function(RED) {
                 ,tid:_tid
             }));
             waitlist[_tid] = function(re){
-                re.tid = _tid ; // Copy transaction ID (to recognize reply of GET/PUT method)
+                //re.tid = _tid ; // Copy transaction ID (to recognize reply of GET/PUT method)
                 re.reqid = msg.reqid ;  // Forward input's reqid (Primarily for implementing v2)
                 node.send(re) ;
             } ;
@@ -135,18 +135,23 @@ function setupNetwork(){
                             if( p == 'method' ) continue ;
                             if( subs[p] != null ){
                                 subs[p].forEach(n=>{
-                                    n.send(cmd[p]) ;
+                                    // Pick interested path only
+                                    let d = {method:'PUB'} ;
+                                    d[p] = cmd[p] ;
+                                    n.send(d) ;
+                                    //n.send(cmd[p]) ;
                                 });
                             }
                         }
                         break ;
                     default :
                         if( waitlist[cmd.tid] != null ){
-                            for( let p in cmd ){
+                            waitlist[cmd.tid](cmd) ;
+                            /*for( let p in cmd ){
                                 if( p == 'tid' ) continue ;
 
                                 waitlist[cmd.tid](cmd[p]) ;
-                            }
+                            }*/
                             delete waitlist[cmd.tid] ;
                         }
                     }

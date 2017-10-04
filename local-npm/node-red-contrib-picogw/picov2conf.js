@@ -30,13 +30,13 @@ module.exports = function(RED) {
 
         node.on('input', function(msg) {
             if(msg.payload != null ) msg = msg.payload ;
+
             const ret = {
-                path:'/v2/'+path
-                ,value:msg.value
+                method:msg.method
+                ,reqid:msg.reqid
             } ;
-            if( typeof msg.reqid == 'number' ) ret.reqid = msg.reqid ;
-            else ret.method='PUB' ;
-            //log('WStream.write:'+JSON.stringify(ret)) ;
+            ret['/v2/'+path] = {value:msg.value} ;
+            log('WStream.write:'+JSON.stringify(ret)) ;
             wstream.write(JSON.stringify(ret)+'\n') ;
         });
 

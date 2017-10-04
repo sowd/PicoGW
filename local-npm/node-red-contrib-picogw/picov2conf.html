@@ -38,7 +38,21 @@
     <p>・GET 現在値の取得。valueとして値（temperatureは絶対温度,brightnessはルクス)を浮動小数値で返す。argsとしてt=[unixtime]の指定により、過去のログまたは将来の予測値が得られる。location=[lat,lng,alt]の指定（メートル単位）により、他の位置の値も得られる。</p>
     <p>・PUT 現在の値を変更するリクエストを送る。valueとして期待する値を浮動小数値で与える。</p>
     <p>実装上の注意</p>
-    <p>GET/PUTのときは、ノードから出力されるreqidという値を、そのまま同じパスのノード（自分自身でも可）への入力に含めなければならない。</p>
+    <p>このノードへの入力（すなわちAPIクライアントに出力されるデータ）は次の形式のどちらかである。</p>
+    <p>Publishの場合：{method:'PUB',value:RETURN_VALUE }</p>
+    <p>GET/PUTの返答の場合：{value:RETURN_VALUE,reqid:REQID_IN_NUMBER}</p>
+    <p>※reqidは、本ノードの出力側(APIリクエストを受信したときの情報)から得られる。同一ノードインスタンスでなくてもよい。</p>
+    <hr />
+    <p>このノードから出てくるGET/PUTのリクエストをECHONET Liteのpico api callノードに入力するのは直結でよい。</p>
+    <p>pico api callノードECHONET Lite出力から、v2形式に変換するfunctionノードの実装例：</p>
+    <pre>
+let value ;
+for( let key in msg )
+    if( key.charAt(0)=='/')
+        value = msg[key].value ;
+
+return { method:msg.method,value:value,reqid:msg.reqid } ;
+    </pre>
     <p>
         PicoGWはECHOENT Lite対応、神奈川工科大学発のホームサーバーです。
         関連情報は<a href="http://pico.peatix.com/">こちらから</a>。
