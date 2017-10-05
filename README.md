@@ -239,38 +239,8 @@ Then a value change is asynchronously notified by a PUB JSON object.
 # v2 API
 
 The PicoGW's v2 API, specified by the prefix /v2/, is in an experimental stage. Therefore, continuity of this API is not guaranteed.
-Currently, there is nothing under /v2/ except /v2/function. By calling APIs under /v2/function/, some elements are added under /v2/.
+Currently, v2 API should be manually designed by Node-RED. Please open /apps.html to see requirements for Node-RED.
 
-
-## v2 Aliasing API
-
-One or more human readable or shorter name can be assigned to each API path. This functionality is called as 'Aliasing'.
-
-#### GET /v2/function/alias
-
-Shows the list of currently defined aliases
-
-#### POST /v2/function/alias/[ALIAS_NAME]
-
-Parameter object (specified in body): {"path":"[Associated API path]"}
-
-Defines new alias with the specified path.
-
-#### PUT /v2/function/alias/[ALIAS_NAME]
-
-Parameter object (specified in body): {"path":"[Associated API path]"}
-
-Replaces existing alias text with the specified path.
-
-#### DELETE /v2/function/alias/[ALIAS_NAME]
-
-No parameter is necessary.
-
-Deletes an existing alias.
-
-#### GET|POST|PUT|DELETE /v2/[ALIAS_NAME]
-
-API call by the alias name, rather than the associated full API path.
 
 ## Licenses
 
@@ -303,6 +273,7 @@ API call by the alias name, rather than the associated full API path.
 
 **npm**  
 [websocket](https://www.npmjs.com/package/websocket)  
+[node-red](https://www.npmjs.com/package/node-red)
 
 #### No license
 
