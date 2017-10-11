@@ -35,12 +35,12 @@ module.exports = function(RED) {
     setupNetwork() ;
 
     function picogw(config) {
-        if( config.path.slice(-1)=='/') config.path = config.path.slice(0,-1) ;
+        if( config.resource.slice(-1)=='/') config.resource = config.resource.slice(0,-1) ;
 
         RED.nodes.createNode(this,config);
 
         const node = this;
-        const path = config.path ;
+        const path = config.resource ;
         const poll_interv = parseInt(config.polling)
         const args_for_poll = config.args_for_poll ;
 

@@ -3,16 +3,16 @@
         category: 'advanced',
         color: '#ff8888',
         defaults: {
-            path: {value:"temperature",required:true}
+            resource: {value:"temperature",required:true}
         },
         inputs:1,
         inputLabels:'Send reply or publish',
-        outputs:2,
-        outputLabels:['GET','PUT'],
+        outputs:3,
+        outputLabels:['GET','PUT','DELETE'],
         icon: "picon.v2.png",
         align: "left",
         label: function() {
-            return '/v2/'+this.path||"pico v2 conf";
+            return '/v2/'+this.resource||"pico v2 conf";
             //return this.name||"pico v2 conf";
         }
     });
@@ -20,11 +20,13 @@
 
 <script type="text/x-red" data-template-name="pico v2 conf">
     <div class="form-row">
-        <label for="node-input-path"><i class="icon-tag"></i> Path</label>
+        <label for="node-input-resource"><i class="icon-tag"></i> Resource</label>
         <!-- input type="text" id="node-input-path" placeholder="Path" -->
-        <select id="node-input-path" style="width:180px;">
+        <select id="node-input-resource" style="width:180px;">
             <option value="temperature">Temperature</option>
+            <option value="temperature_e">Temperature request</option>
             <option value="brightness">Brightness</option>
+            <option value="brightness_e">Brightness request</option>
         </select>
     </div>
 </script>
@@ -32,7 +34,7 @@
 <script type="text/x-red" data-help-name="pico v2 conf">
     <p>PicoGWのV2 APIを実装するためのノードです</p>
     <p>PicoGWのV2 APIは、V1 APIを使ってNode-REDで実装します。APIクライアントがPicoGWの/v2/から始まるパスにアクセスすると、このNode-REDのノードから当該リクエスト情報が出力されます。</p>
-    <p>パスは今のところtemperatureとbrightnessしかありません。それぞれGETとPUTメソッドをサポートし、適宜更新値のpublishも行います。</p>
+    <p>パスは今のところtemperature, temperature_e, brightness, brightness_eしかありません。それぞれGET,PUT,DELETEメソッドをサポートし、適宜更新値のpublishも行います。</p>
     <p>期待される動作</p>
     <p>temperature:</p>
     <p>・GET 現在値の取得。valueとして値（temperatureは絶対温度,brightnessはルクス)を浮動小数値で返す。argsとしてt=[unixtime]の指定により、過去のログまたは将来の予測値が得られる。location=[lat,lng,alt]の指定（メートル単位）により、他の位置の値も得られる。</p>

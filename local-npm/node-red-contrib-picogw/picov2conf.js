@@ -17,16 +17,16 @@ module.exports = function(RED) {
 
 
     function picov2(config) {
-        config.path = removeTailSlash(config.path) ;
+        config.resource = removeTailSlash(config.resource) ;
 
         RED.nodes.createNode(this,config);
         const node = this ;
-        const path = config.path ;
+        const resource = config.resource ;
 
-        if( !(active_nodes[path] instanceof Array) )
-            active_nodes[path] = [node] ;
+        if( !(active_nodes[resource] instanceof Array) )
+            active_nodes[resource] = [node] ;
         else
-            active_nodes[path].push(node) ;
+            active_nodes[resource].push(node) ;
 
         node.on('input', function(msg) {
             if(msg.payload != null ) msg = msg.payload ;
@@ -35,13 +35,13 @@ module.exports = function(RED) {
                 method:msg.method
                 ,reqid:msg.reqid
             } ;
-            ret['/v2/'+path] = {value:msg.value} ;
+            ret['/v2/'+resource] = {value:msg.value} ;
             log('WStream.write:'+JSON.stringify(ret)) ;
             wstream.write(JSON.stringify(ret)+'\n') ;
         });
 
         node.on('close', function(msg) {
-            active_nodes[path] = active_nodes[path].filter(n=>n!=node) ;
+            active_nodes[resource] = active_nodes[resource].filter(n=>n!=node) ;
         }) ;
     }
     RED.nodes.registerType("pico v2 conf",picov2);
@@ -82,18 +82,19 @@ function connectPipe(){
 
                         try {
                             focus = JSON.parse(focus) ;
-                            focus.path = removeTailSlash(focus.path) ;
+                            focus.resource = removeTailSlash(focus.resource) ;
                             //log('onData:'+JSON.stringify(focus)) ;
-                            if( active_nodes[focus.path] instanceof Array ){
-                                active_nodes[focus.path].forEach(n=>{
+                            if( active_nodes[focus.resource] instanceof Array ){
+                                active_nodes[focus.resource].forEach(n=>{
                                     switch( focus.method ){
                                     case 'GET': n.send([focus,null]) ; break ;
-                                    case 'PUT': n.send([null,focus]) ; break ;
+                                    case 'PUT': n.send([null,focus,null]) ; break ;
+                                    case 'DELETE': n.send([null,null,focus]) ; break ;
                                     }
                                 }) ;
                             } else {
                                 wstream.write(JSON.stringify(
-                                    {error:'No such resource:'+focus.path
+                                    {error:'No such resource:'+focus.resource
                                     ,reqid:focus.reqid}
                                 )+'\n') ;
                             }
