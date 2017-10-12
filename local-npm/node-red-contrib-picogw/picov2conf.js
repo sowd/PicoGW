@@ -44,7 +44,7 @@ module.exports = function(RED) {
             active_nodes[resource] = active_nodes[resource].filter(n=>n!=node) ;
         }) ;
     }
-    RED.nodes.registerType("pico v2 conf",picov2);
+    RED.nodes.registerType("pico2 conf",picov2);
 }
 
 let wstream ;

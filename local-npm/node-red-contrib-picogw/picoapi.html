@@ -1,5 +1,5 @@
 <script type="text/javascript">
-    RED.nodes.registerType('pico api call',{
+    RED.nodes.registerType('call picogw',{
         category: 'advanced',
         color: '#ffaaaa',
         defaults: {
@@ -15,12 +15,12 @@
         icon: "picon.png",
         align: "left",
         label: function() {
-            return this.name||"pico api call";
+            return this.name||"call picogw";
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="pico api call">
+<script type="text/x-red" data-template-name="call picogw">
     <div class="form-row">
         <label for="node-input-name"><i class="icon-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Node title">
@@ -39,7 +39,7 @@
     </div>
 </script>
 
-<script type="text/x-red" data-help-name="pico api call">
+<script type="text/x-red" data-help-name="call picogw">
     <p>PicoGWのWebSocket APIを呼び出す</p>
     <p>
         今のところポートはlocalhost:8080固定です。<br />

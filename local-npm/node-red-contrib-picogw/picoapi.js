@@ -95,7 +95,7 @@ module.exports = function(RED) {
             }) ;
         }
     }
-    RED.nodes.registerType("pico api call",picogw);
+    RED.nodes.registerType("call picogw",picogw);
 }
 
 function setupNetwork(){
