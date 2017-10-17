@@ -441,17 +441,18 @@ onload = function(){
 
 
 </script>
-<!-- script>
+<script>
 // Non-GET method test.
-	$.ajax({
-		type: 'PUT'
-		,url: '/v1/echonet/Buzzer_1/SoundGeneratingSet'
-		,data: {value:[0x41]}
+	/*$.ajax({
+		type: 'DELETE'
+		,url: '/v2/Temperature/Living'
+		,data: {expected:22}
 		,success: content=>{
+			console.log(content) ;
 			//alert(JSON.stringify(content,null,'\t')) ;
 		}
 		,error: err=>{ alert(JSON.stringify(err,null,'\t')) ; }
 	});
-
-</script -->
+	*/
+</script>
 </html>

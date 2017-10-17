@@ -1,16 +1,26 @@
 const PICOGW_PORT = 8080 ;
 
 const fs = require('fs');
+
+const RESRC_NAMES = ['Temperature','Luminosity'] ;
+
 const PIPE_NAME = { // inverse of node.js side
     read:'v2/pipe_w'
     ,write:'v2/pipe_r'
 };
 
-let active_nodes = {} ;
 const log = msg=>{console.log('[v2 conf] '+msg)} ;
 function removeTailSlash(str){
     return str.slice(-1)=='/' ? str.slice(0,-1) : str ;
 }
+
+
+
+
+
+let resrc_ctxs = {} ;
+//Initialize resrc_ctxs
+RESRC_NAMES.forEach( rsn=>{ resrc_ctxs[rsn]={}; }) ;
 
 module.exports = function(RED) {
     connectPipe() ;
@@ -22,11 +32,13 @@ module.exports = function(RED) {
         RED.nodes.createNode(this,config);
         const node = this ;
         const resource = config.resource ;
+        const context = config.context ;
+        const path = `${resource}/${context}` ;
 
-        if( !(active_nodes[resource] instanceof Array) )
-            active_nodes[resource] = [node] ;
+        if( !(resrc_ctxs[resource][context] instanceof Array) )
+            resrc_ctxs[resource][context] = [node] ;
         else
-            active_nodes[resource].push(node) ;
+            resrc_ctxs[resource][context].push(node) ;
 
         node.on('input', function(msg) {
             if(msg.payload != null ) msg = msg.payload ;
@@ -35,13 +47,19 @@ module.exports = function(RED) {
                 method:msg.method
                 ,reqid:msg.reqid
             } ;
-            ret['/v2/'+resource] = {value:msg.value} ;
+            delete msg.method ;
+            delete msg.reqid ;
+            delete msg._msgid ;
+
+            ret['/v2/'+path] = msg ;
             log('WStream.write:'+JSON.stringify(ret)) ;
             wstream.write(JSON.stringify(ret)+'\n') ;
         });
 
         node.on('close', function(msg) {
-            active_nodes[resource] = active_nodes[resource].filter(n=>n!=node) ;
+            resrc_ctxs[resource][context] = resrc_ctxs[resource][context].filter(n=>n!=node) ;
+            if( resrc_ctxs[resource][context].length==0 )
+                delete resrc_ctxs[resource][context] ;
         }) ;
     }
     RED.nodes.registerType("pico2 conf",picov2);
@@ -80,12 +98,45 @@ function connectPipe(){
                         var focus = readbuf.slice(0,ri) ;
                         readbuf = readbuf.slice(ri+1) ;
 
+
                         try {
                             focus = JSON.parse(focus) ;
-                            focus.resource = removeTailSlash(focus.resource) ;
+                            focus.path = removeTailSlash(focus.path).trim() ;
+                            let ret = {reqid:focus.reqid} ;
+                            if( focus.path == ''){
+                                ret['/v2/'+focus.path] = {} ;
+                                RESRC_NAMES.forEach(rsn=>{ret['/v2/'+focus.path][rsn]={};});
+                                wstream.write(JSON.stringify(ret)+'\n') ;
+                                return ;
+                            }
+
+                            let pathsplit = focus.path.split('/') ;
+                            const resource = pathsplit[0] ;
+                            if( resrc_ctxs[resource] == null ){
+                                ret.error = 'No such resource: '+pathsplit[0] ;
+                                wstream.write(JSON.stringify(ret)+'\n') ;
+                                return ;
+                            }
+                            // Resource only (Asking contexts under resource)
+                            if( pathsplit.length==1 ){
+                                ret['/v2/'+focus.path] = {} ;
+                                for( const context in resrc_ctxs[resource] )
+                                    ret['/v2/'+resource][context] = [] ;
+                                wstream.write(JSON.stringify(ret)+'\n') ;
+                                return ;
+                            }
+
+                            const context = pathsplit[1] ;
+
+                            if( resrc_ctxs[resource][context] == null ){
+                                ret.error = 'No such resource: '+pathsplit[0] ;
+                                wstream.write(JSON.stringify(ret)+'\n') ;
+                                return ;
+                            }
+
                             //log('onData:'+JSON.stringify(focus)) ;
-                            if( active_nodes[focus.resource] instanceof Array ){
-                                active_nodes[focus.resource].forEach(n=>{
+                            if( resrc_ctxs[resource][context] instanceof Array ){
+                                resrc_ctxs[resource][context].forEach(n=>{
                                     switch( focus.method ){
                                     case 'GET': n.send([focus,null]) ; break ;
                                     case 'PUT': n.send([null,focus,null]) ; break ;
@@ -93,10 +144,8 @@ function connectPipe(){
                                     }
                                 }) ;
                             } else {
-                                wstream.write(JSON.stringify(
-                                    {error:'No such resource:'+focus.resource
-                                    ,reqid:focus.reqid}
-                                )+'\n') ;
+                                ret.error = 'No such path: /v2/'+focus.path ;
+                                wstream.write(JSON.stringify(ret)+'\n') ;
                             }
                         } catch(e){}
                     });

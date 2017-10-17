@@ -28,7 +28,7 @@
   "node-red": {
     "nodes": {
       "pico api": "picoapi.js",
-      "pico v2 conf": "picov2conf.js"
+      "pico v2 conf": "pico2conf.js"
     }
   },
   "readme": "# node-red-contrib-picogw Node-REDのPicoGWノード\n\n## PicoGW\n",

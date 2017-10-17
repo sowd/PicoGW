@@ -66,6 +66,24 @@ $ node main.js -p 12345
 
 Change v1/plugins/echonet/controller_properties.json's "8a" value.
 
+#### Enable v2 API
+
+V2 API requires programming by Node-RED.  
+Install Node-RED & related libraries and make necessary named pipe files by hitting:  
+```bash
+$ npm run v2api
+```
+
+Disableing or completely removing v2 api environment:  
+```bash
+$ npm run disablev2api
+```
+```bash
+$ npm run removev2api
+```
+
+V2 API is not well documented yet but the related technical paper is submitted. Please wait until it will get accepted! ^^;
+
 #### Run with node-inspector
 
 **./debug.sh** simplifies running PicoGW with Chrome DevTools.
@@ -236,11 +254,11 @@ Then a value change is asynchronously notified by a PUB JSON object.
 
 > {"method":"UNSUB","path":"/v1/echonet/AirConditioner_1/OperatingState"}
 
-# v2 API
+<!-- # v2 API
 
 The PicoGW's v2 API, specified by the prefix /v2/, is in an experimental stage. Therefore, continuity of this API is not guaranteed.
 Currently, v2 API should be manually designed by Node-RED. Please open /apps.html to see requirements for Node-RED.
-
+-->
 
 ## Licenses
 

@@ -38,7 +38,6 @@ exports.init = function(_globals,_clientFactory){
 				node_red_process.kill('SIGHUP') ;
 				node_red_process = null ;
 			}
-
 			Promise.all([
 				// Boot Node-RED and display messages
 				new Promise((ac2,rj2)=>{
