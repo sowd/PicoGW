@@ -46,7 +46,7 @@ exports.init = function(_globals,_clientFactory){
 						msgs.split('\n').forEach(msg=>console.log('Node-RED: '+msg))
 					} ;
 
-					node_red_process = child_process.spawn( 'node',['node_modules/node-red/red.js'] ) ;
+					node_red_process = child_process.spawn( 'node',['node_modules/node-red/red.js','local-npm/node-red-contrib-picogw/flows/PicoGW_V2API.json'] ) ;
 					node_red_process.stdout.on('data',data=>{
 						node_red_log(data) ;
 						ac2() ;
