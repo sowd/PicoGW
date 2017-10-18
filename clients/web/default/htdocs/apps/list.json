@@ -55,7 +55,7 @@
 	}
 	,{
 		"title":"Node-RED"
-		,"description":"Node-RED GUI. To use this, hit <b>npm run v2api</b> in PicoGW root and reboot. Sample: <b>/apps/node-red/PicoGW_V2API_Example.json</b>"
+		,"description":"Node-RED GUI. To use this, hit <b>npm run v2api</b> in PicoGW root and reboot."
 		,"icon":"/apps/node-red/icon.png"
 		,"required_paths":[
 			"*"

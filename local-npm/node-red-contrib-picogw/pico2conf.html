@@ -39,7 +39,7 @@
     <p></p>
     <p>Node-REDで実装すべき機能は、現在のセンシング値の出力(GETの場合)と、そのセンシング値がPUTからexpected（期待値）として送られる値に近づくように機器制御を行うというものです。DELETEされたらexpected（期待値）の設定を削除し、機器制御をやめます。expectedが設定されているときは、GETリクエスト時に期待値もexpectedとして返答に含めてください。</p>
     <p>もしリクエストにreqidというメンバーが含まれていたら、返答にもこの値をそのまま入れてください。クライアントが呼び出しと返答の対応を取るための値です。</p>
-    <p>ECHONET Lite対応エアコンを用いた実装例が<a href='https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/clients/web/default/htdocs/apps/node-red/PicoGW_V2API_Example.json' target='_blank'>こちらにあります</a>。対応エアコンをお持ちでない方は、<a href='https://github.com/SonyCSL/MoekadenRoom' target='_blank'>このエミュレータ</a>もお使いください。</p>
+    <p>デフォルトのプログラムは、ECHONET Lite対応エアコンと仮想的な温度センサーを用いた実装例です。ECHONET Lite対応エアコンをお持ちでない方は、<a href='https://github.com/SonyCSL/MoekadenRoom' target='_blank'>このエミュレータ</a>をお使いください。</p>
     <p>
     <p></p>
     ノードに入出力されるデータの形式は以下の二種類があります。
