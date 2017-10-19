@@ -2,22 +2,32 @@
 <html>
 <head>
 <link rel="stylesheet" href="js/jstree-themes/default/style.min.css" />
+<style>
+  .app-button { height:140px;width:100px;margin:5px;padding:0px;}
+  .app-icon { margin-top:0px;padding:0px; }
+  .app-text { height:40px;}
+</style>
 </head>
 <body>
 <img src='res/Banner.png' style='height:50px;'></img><span style='float:right' align='right'>
-A minimalist's home gateway that hosts <a href='http://www.daiwahouse.co.jp/lab/HousingAPI/' target='_blank'>Housing API</a><br />
+A device API server that hosts <a href='http://www.daiwahouse.co.jp/lab/HousingAPI/' target='_blank'>Housing API</a><br />
 </span>
 <br clear='all'>
 <div id="tabs">
   <ul>
     <li><a href="#tabs-resources">API Hierarchy</a></li>
+    <li><a href="#tabs-apps">Apps</a></li>
     <li><a href="#tabs-howto">Howto</a></li>
     <li><a href="#tabs-about">About</a></li>
   </ul>
 
+
 <div id='tabs-resources'>
 <div id="resource_tree"></div>
 </div>
+
+<div id='tabs-apps'></div>
+
 <div id='tabs-howto'>
 To access ECHONET Lite device, right click the device's property name (such as OperatingState) and select 'Open API', which generates ECHONET Lite's GET access to the property in new tab.
 <div id='api_howto'>
@@ -35,12 +45,7 @@ The external libraries used and their licenses are listed in <a href='https://gi
 </div>
 
 <div id="api-test-dialog" title="API Test">
-  <!-- p>
-    <span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
-    Your files have downloaded successfully into the My Downloads folder.
-  </p -->
-  <p id='api-testing-message'>
-  </p>
+  <p id='api-testing-message'></p>
 </div>
 
 </body>
@@ -68,6 +73,90 @@ let picogw ;
 
 const RSA_PUB_KEY = __%%RSA_PUB_KEY%%__ ;
 const ADDITIONAL_LICENSES_LINK = __%%ADDITIONAL_LICENSES%%__ ;
+
+/// Apps list
+function genAppsList(){
+	//let active_apps = [] ;
+	$.getJSON('apps/list.json',apps=>{
+		let active_apps = apps.map(()=>false) ;
+		for( let ai=0;ai<apps.length;++ai){
+			(function(){
+				const app_idx = ai ;
+				const app_info = apps[app_idx] ;
+				Promise.all(
+					app_info.required_paths.map(req_path=> new Promise((ac,rj)=>{
+						if( req_path == '*'){	// wildcard
+							ac({'/':{}});
+							return ;
+						}
+						if( req_path.slice(-1)=='/') req_path = req_path.slice(0,-1) ;
+						let req_path_elems = req_path.split('/') ;
+						let prop_prefix = req_path_elems.pop() ;
+						let par_path = req_path_elems.join('/') ;
+						picogw.callproc({
+							method:'GET'
+							,path:par_path
+						}).then(dir=>{
+							let ret ;
+							for( let elem in dir ){
+								if( elem.indexOf(prop_prefix)!=0 ) continue ;
+								if( ret == undefined ) ret = {} ;
+								ret[par_path+'/'+elem] = dir[elem] ;
+							}
+							if( ret == undefined ) rj({error:'No matching element'}) ;
+							else ac(ret) ;
+						}).catch(rj) ;
+					}))
+				).then(rets=>{
+					let avail_paths = {} ;
+					rets.forEach(ret=>{
+						if( avail_paths == undefined ) return ;	// This app is unavailable
+						if( ret.error != null ){ avail_paths = undefined ; return ;}	// This app is unavailable
+						let paths_add ;
+						for( let path in ret ){
+							if( ret[path].error != null ) continue ;
+							if( paths_add == undefined ) paths_add = {} ;
+							paths_add[path] = ret[path] ;
+						}
+						if( paths_add == undefined ){
+							// No path available for related req_path. Error end.
+							avail_paths = undefined ; return ;
+						}
+						Object.assign(avail_paths,paths_add) ;
+					});
+					if( avail_paths != null ){
+						app_info.avail_paths = avail_paths ;
+
+						active_apps[app_idx] = app_info ;
+
+						// Update app list
+						// console.log(active_apps) ;
+
+						let ht = '' ;
+
+						active_apps.forEach(ap=>{
+							if( ap === false ) return ;
+							let url = ap.url.split('%%_PICOGW_HOSTNAME_%%').join(location.hostname) ;
+							// Hover : ap.description
+							if( ap.eula == null )
+								ht += `<button class='app-button ui-state-default' onclick="location.href='${url}?ip=${location.host}&timestamp=${(new Date()).getTime()}'" title='${ap.description}'><img src='${ap.icon}' class='app-icon'></img><div align='center' class='app-text'>${ap.title}</div></button>` ;
+							else
+								ht += `<button class='app-button ui-state-default' onclick="if(confirm('${ap.eula}'))location.href='${url}?ip=${location.host}&timestamp=${(new Date()).getTime()}'" title='${ap.description}'><img src='${ap.icon}' class='app-icon'></img><div align='center' class='app-text'>${ap.title}</div></button>` ;
+						});
+
+						$('#tabs-apps').html(ht) ;
+
+					    //$( "#tabs-apps" ).sortable();
+					    //$( "#tabs-apps" ).disableSelection();
+					}
+				}).catch(()=>{}) ;
+			})();
+		}
+//		apps.forEach(app_info=>{
+//		});
+	});
+}
+
 
 /// Tree activities
 function t_open(path){
@@ -132,6 +221,8 @@ onload = function(){
 		picogw = _picogw ;
 		if( bInitialized ) return ;
 		bInitialized = true ;
+
+		genAppsList() ;
 
 		// When selected
 		res_tree.on('changed.jstree', function (e, data) {

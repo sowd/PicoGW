@@ -74,10 +74,17 @@ Install Node-RED & related libraries and make necessary named pipe files by hitt
 $ npm run v2api
 ```
 
-Disableing or completely removing v2 api environment:  
+Disable v2 api environment:  
 ```bash
 $ npm run disablev2api
 ```
+
+Re-enable v2 api environment:  
+```bash
+$ npm run enablev2api
+```
+
+Completely remove v2 api environment:  
 ```bash
 $ npm run removev2api
 ```
