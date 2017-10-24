@@ -6,6 +6,7 @@ clients/.key
 clients/web/custom
 clients/web/default/localstorage/*
 v1/plugins/admin/settings.json
+v1/plugins/slack/settings.json
 v1/plugins/openweathermap/settings.json
 v1/plugins/healbe/settings.json
 v1/plugins/echonet/makercodes.json
