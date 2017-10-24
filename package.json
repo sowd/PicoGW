@@ -6,6 +6,7 @@
   "dependencies": {
     "arped": "file:./local-npm/node-arped",
     "body-parser": "^1.17.2",
+    "botkit": "^0.6.4",
     "cryptico": "^1.0.2",
     "echonet-lite": "0.0.19",
     "express": "^4.15.2",
