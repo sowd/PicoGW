@@ -198,7 +198,7 @@ Slack plugin works after the bot token is specified to the settings. The token c
 1. Log in to your slack team in your browser.
 2. Access **https://[Your Team].slack.com/apps/A0F7YS25R-bots**
 3. Click 'Add Configuration' link
-4. Set bot name (We recommend 'nanogw-bot') and click 'Add Bot Integration'
+4. Set bot name (We recommend 'nanogw-[NanoGW Place]') and click 'Add Bot Integration'
 5. The token is shown in Integration Settings => API Token. Copy-paste it to NanoGW plugin's setting.
 6. Add this bot to your favorite channel(s).
 
