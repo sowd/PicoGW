@@ -64,7 +64,7 @@ The external libraries used and their licenses are listed in <a href='https://gi
 <script src='js/picogw.js'></script>
 <script>
 
-const API_PREFIX = '/v1' ;
+const API_ROOT_PREFICES = {'v1':{option:{leaf:false}},'v2':{option:{leaf:false}}} ;
 var log = console.log ;
 var res_tree = $('#resource_tree') ;
 var node_properties = {'.':{isleaf:false, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/}} ;
@@ -73,6 +73,317 @@ let picogw ;
 
 const RSA_PUB_KEY = __%%RSA_PUB_KEY%%__ ;
 const ADDITIONAL_LICENSES_LINK = __%%ADDITIONAL_LICENSES%%__ ;
+
+
+
+let bInitialized = false ;
+onload = function(){
+	connectws(_picogw=>{
+		picogw = _picogw ;
+		if( bInitialized ) return ;
+		bInitialized = true ;
+
+		genAppsList() ;
+
+		// When selected
+		res_tree.on('changed.jstree', function (e, data) {
+			if( data.action == 'select_node' ) {
+				if( res_tree.jstree( 'is_open' , data.node ) ){
+					// Already open
+					if( data.node.id != '.')
+						res_tree.jstree( 'close_node', data.node);
+				} else {// Not open yet
+					var selnodename = data.selected[0] ;
+					if( node_properties[selnodename].isleaf ){
+						if( node_properties[selnodename].longdoc != undefined )
+							alert(node_properties[selnodename].longdoc) ;
+						else
+							alert('No documentation available on this leaf.') ;
+					} else {
+						t_open(selnodename) ;
+					}
+				}
+			}
+		});
+		// When closed
+		res_tree.on('after_close.jstree',(e,data)=>{
+			data.node.children.forEach(cn=>{ delete node_properties[cn] ; })
+			res_tree.jstree( 'delete_node', data.node.children) ;
+		}) ;
+		// Open root elements for first time
+		res_tree.on('loaded.jstree',(e,data)=>{ t_open('.'); }) ;
+		// Initialize
+		res_tree.jstree({
+			core: {
+				'data': [{id:'.',text:'/'}]
+				,'check_callback': true
+	        }
+	        ,plugins : [ 'contextmenu' , 'types']
+	        ,contextmenu : {
+	        	items:node=>{
+	        		var menu = {} ;
+	        		if( node_properties[node.id].settings_schema != undefined ){
+		        			menu.Settings = {label:'Settings',action:obj=>{
+			        			if( node_properties[node.id].settings_schema.error != undefined ){
+		        					alert(node_properties[node.id].settings_schema.error) ;
+		        					return ;
+			        			}
+
+								if( picogw == undefined ){
+									alert('Not connected to the gateway.') ;
+									return ;
+								}
+								picogw.callproc({
+									method:'GET'
+									,path: node.id.split('.').slice(0,-2).join('/')
+									,args:{option:'true'}
+								}).then(function(json){
+
+			        			// Reload schema and current value
+		    					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
+		    					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
+		    					node_properties[node.id].settings = new_node_prop.option.settings ;
+
+
+		        				var settings_schema = node_properties[node.id].settings_schema ;
+		        				var settings = node_properties[node.id].settings ;
+		        				var editor = new JSONEditor(
+		        					document.getElementById('settings_dlg_json_editor_holder')
+		        					,{
+		        						schema:settings_schema
+		        						,theme: 'jqueryui'
+		        						,iconlib: 'jqueryui'
+		        						,disable_collapse: true
+		        						,disable_edit_json: true
+		        						,disable_properties: true
+		        						,keep_oneof_values: false
+		        					}
+		        				) ;
+		        				if( settings != undefined)
+		        					editor.setValue(settings) ;
+
+		        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
+
+								$('#settings_dialog').dialog({
+									modal: true
+									, width: '90%'
+									, close : cleanup
+									, buttons: {
+										Apply: function(){
+											var path = node.id.split('.').join('/') ;
+
+											picogw.callproc({
+												method:'POST'
+												,path: path+'settings'
+												,args:{encrypted:cryptico.encrypt( JSON.stringify(editor.getValue()), RSA_PUB_KEY ).cipher}
+											}).then(function(json){
+												console.log(json) ;
+												if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+											}).catch(e=>{
+												alert('API call failed:'+path) ; 
+												console.error(e) ;
+											});
+
+											cleanup() ;
+											$( this ).dialog( "close" );
+										}
+										,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
+									}
+								}) ;
+		        			}) ;
+	        			}} ;
+	        		}
+
+		        	/*menu.Document = {label:'Document', action:obj=>{
+							if( node_properties[node.id].longdoc != undefined )
+								alert(node_properties[node.id].longdoc) ;
+							else
+								alert('No document available.') ;
+						}} ;*/
+
+					menu.TestAPI = {label:'Test API',action:obj=>{
+						let node_prop = node_properties[node.id] ;
+						let path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+
+						let ht = '<pre>' ;
+						let access_queue = [] ;
+						function access(){
+							if( access_queue.length==0){
+								ht += '</pre><hr />API test completed.' ;
+								$('#api-testing-message').html(ht) ;
+								return ;
+							}
+							const acss = access_queue.shift() ;
+							ht += `${acss.method} ${acss.path}${acss.args==undefined?'':' '+JSON.stringify(acss.args)} :` ;
+							$('#api-testing-message').html(ht+'</pre>') ;
+							let starttime = (new Date()).getTime() ;
+							$.ajax({type:acss.method,url:acss.path,data:acss.args,dataType:'json',
+								success:json=>{
+									ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
+									ht += JSON.stringify(json)+'\n' ;
+									$('#api-testing-message').html(ht+'</pre>') ;
+									if( acss.wait==null ) access() ;
+									else setTimeout(access,acss.wait) ;
+								}
+								,error:e=>{
+									ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
+									ht += JSON.stringify(e,null,'\t') ;
+									$('#api-testing-message').html(ht+'</pre>') ;
+									if( acss.wait==null ) access() ;
+									else setTimeout(access,acss.wait) ;
+									//access() ;
+								}
+							}) ;
+						}
+
+						$( '#api-test-dialog' ).dialog({
+							modal: true
+							,buttons: {
+								Ok: function() {
+									$('#api-testing-message').html('') ;
+									access_queue = [] ;
+									$( this ).dialog( "close" );
+								}
+							}
+							///,width:'80%',height:'80%'
+						});
+
+						if( node_prop.isleaf ){
+							access_queue.push({method:'GET',path:path_real});
+							access() ;
+						} else {
+							picogw.callproc({
+								method:'GET'
+								,path:path_real
+								,args:{option:'true'}
+							}).then(function(json){
+								for( let k in json ){
+									let path = path_real+k ;
+									access_queue.push({method:'GET',path:path});
+									if( json[k].option == null ) continue ;
+									let test = json[k].option.test ;
+									if( test instanceof Array ){
+										test.forEach(te=>{
+											te.path = path ;
+											access_queue.push(te) ;
+										}) ;
+									}
+								}
+								access() ;
+							}).catch(e=>{
+								alert('API call failed:'+path_real) ;
+								$( '#api-test-dialog' ).dialog('close');
+							}) ;
+						}
+
+					}} ;
+
+					menu.OpenAPI = {label:'Open API in other tab',action:obj=>{
+						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
+						window.open( path_real,'_blank') ;
+					}} ;
+
+	        		return menu ;
+				}
+				,select_node: false
+	        }
+			,types: {
+				folder: {icon: 'jstree-folder'}
+				,file: {icon: 'jstree-file'}
+			}
+	    }) ;
+	}) ;
+
+
+	// Create tabs
+	$( "#tabs" ).tabs();	// Stylize by jquery ui
+
+	// Load README document from GitHub
+	$.ajax({
+		type: 'GET'
+		,url: 'https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/README.md'
+		,success: content=>{
+			const START_POINT = content.indexOf('## Remarks') ;
+			const LICENSE_POINT = content.indexOf('## Licenses') ;
+			var apihowto = content.slice( START_POINT , LICENSE_POINT) ;
+			var license = content.slice( LICENSE_POINT ) ;
+			apihowto=apihowto.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
+			license=license.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
+
+			license += ADDITIONAL_LICENSES_LINK ;
+
+			$('#api_howto').html(marked(apihowto)) ;
+			$('#license_text').html(marked(license)) ;
+			//console.log(readme) ;
+			//if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
+		}
+		,error: err=>{ alert('README file cannot be loaded.') ; }
+	});
+
+} ;
+
+
+
+
+/// Tree activities
+function t_open(path){
+	return new Promise( (ac,rj)=>{
+		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
+
+		if( picogw == undefined )
+			return ;
+		picogw.callproc({
+			method:'GET'
+			,path: path_real
+			,args:{option:'true'}
+		}).then(function(json){
+			if( path_real == '/' )
+				json = API_ROOT_PREFICES ;
+
+			let id_to_longdoc = {} ;
+			for( let dk in json ){
+				let next_path_id = path+dk+'.' ;
+				let txt = dk;//`${path_real}${dk}` ;
+
+				node_properties[next_path_id] = {isleaf:true, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/} ;
+
+				let longdoc ;
+				try {
+					let opt = json[dk].option ;
+					node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
+					if( opt.doc != undefined ){
+						if( opt.doc.short != undefined )
+							txt += ' (' + opt.doc.short +')' ;
+						longdoc = opt.doc.long ;
+						/*if( longdoc != undefined)
+							node_properties[next_path_id].longdoc = longdoc ;*/
+					}
+					if( node_properties[next_path_id].settings_schema = opt.settings_schema )
+						txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
+					node_properties[next_path_id].settings = opt.settings ;
+
+				} catch(e){}
+
+				res_tree.jstree(
+					'create_node', '#'+path
+					,{ id : next_path_id , text : txt
+					, type : (node_properties[next_path_id].isleaf?'file':'folder')});
+
+				if( longdoc )
+					id_to_longdoc[next_path_id]=longdoc ;
+			}
+			res_tree.jstree('open_node', '#'+path);
+
+			for( var path_id in id_to_longdoc)
+				document.getElementById(path_id).setAttribute('title',id_to_longdoc[path_id]) ;
+			$( document ).tooltip();
+		}).catch(e=>{
+			alert('API call failed:'+path) ;
+			console.error(e) ;
+		});
+	}) ;
+}
+
 
 /// Apps list
 function genAppsList(){
@@ -156,380 +467,6 @@ function genAppsList(){
 //		});
 	});
 }
-
-
-/// Tree activities
-function t_open(path){
-	return new Promise( (ac,rj)=>{
-		var path_real = path.replace(new RegExp('\\.','g'),'/') ;
-
-		if( picogw == undefined )
-			return ;
-		picogw.callproc({
-			method:'GET'
-			,path:API_PREFIX+path_real
-			,args:{option:'true'}
-		}).then(function(json){
-			var id_to_longdoc = {} ;
-			for( var dk in json ){
-				var next_path_id = path+dk+'.' ;
-				var txt = dk;//`${path_real}${dk}` ;
-
-				node_properties[next_path_id] = {isleaf:true, settings_schema:undefined, settings:undefined /*,longdoc:undefined*/} ;
-
-				var longdoc ;
-				try {
-					var opt = json[dk].option ;
-					node_properties[next_path_id].isleaf = (opt.leaf !== false) ;
-					if( opt.doc != undefined ){
-						if( opt.doc.short != undefined )
-							txt += ' (' + opt.doc.short +')' ;
-						longdoc = opt.doc.long ;
-						/*if( longdoc != undefined)
-							node_properties[next_path_id].longdoc = longdoc ;*/
-					}
-					if( node_properties[next_path_id].settings_schema = opt.settings_schema )
-						txt += '<span class="ui-icon ui-icon-gear" style="display:inline-block"></span>';
-					node_properties[next_path_id].settings = opt.settings ;
-
-				} catch(e){}
-
-				res_tree.jstree(
-					'create_node', '#'+path
-					,{ id : next_path_id , text : txt
-					, type : (node_properties[next_path_id].isleaf?'file':'folder')});
-
-				if( longdoc )
-					id_to_longdoc[next_path_id]=longdoc ;
-			}
-			res_tree.jstree('open_node', '#'+path);
-
-			for( var path_id in id_to_longdoc)
-				document.getElementById(path_id).setAttribute('title',id_to_longdoc[path_id]) ;
-			$( document ).tooltip();
-		}).catch(e=>{
-			alert('API call failed:'+path) ;
-			console.error(e) ;
-		});
-	}) ;
-}
-
-let bInitialized = false ;
-
-onload = function(){
-	connectws(_picogw=>{
-		picogw = _picogw ;
-		if( bInitialized ) return ;
-		bInitialized = true ;
-
-		genAppsList() ;
-
-		// When selected
-		res_tree.on('changed.jstree', function (e, data) {
-			if( data.action == 'select_node' ) {
-				if( res_tree.jstree( 'is_open' , data.node ) ){
-					// Already open
-					if( data.node.id != '.')
-						res_tree.jstree( 'close_node', data.node);
-				} else {// Not open yet
-					var selnodename = data.selected[0] ;
-					if( node_properties[selnodename].isleaf ){
-						if( node_properties[selnodename].longdoc != undefined )
-							alert(node_properties[selnodename].longdoc) ;
-						else
-							alert('No documentation available on this leaf.') ;
-					} else {
-						t_open(selnodename) ;
-					}
-				}
-			}
-		});
-		// When closed
-		res_tree.on('after_close.jstree',(e,data)=>{
-			data.node.children.forEach(cn=>{ delete node_properties[cn] ; })
-			res_tree.jstree( 'delete_node', data.node.children) ;
-		}) ;
-		// Open root elements for first time
-		res_tree.on('loaded.jstree',(e,data)=>{ t_open('.'); }) ;
-		// Initialize
-		res_tree.jstree({
-			core: {
-				'data': [{id:'.',text:'/'}]
-				,'check_callback': true
-	        }
-	        ,plugins : [ 'contextmenu' , 'types']
-	        ,contextmenu : {
-	        	items:node=>{
-	        		var menu = {} ;
-	        		if( node_properties[node.id].settings_schema != undefined ){
-		        			menu.Settings = {label:'Settings',action:obj=>{
-			        			if( node_properties[node.id].settings_schema.error != undefined ){
-		        					alert(node_properties[node.id].settings_schema.error) ;
-		        					return ;
-			        			}
-
-								if( picogw == undefined ){
-									alert('Not connected to the gateway.') ;
-									return ;
-								}
-								picogw.callproc({
-									method:'GET'
-									,path:API_PREFIX+node.id.split('.').slice(0,-2).join('/')
-									,args:{option:'true'}
-								}).then(function(json){
-
-			        			// Reload schema and current value
-		    					var new_node_prop = json[node.id.split('.').slice(-2,-1)[0]] ;
-		    					node_properties[node.id].settings_schema = new_node_prop.option.settings_schema ;
-		    					node_properties[node.id].settings = new_node_prop.option.settings ;
-
-
-		        				var settings_schema = node_properties[node.id].settings_schema ;
-		        				var settings = node_properties[node.id].settings ;
-		        				var editor = new JSONEditor(
-		        					document.getElementById('settings_dlg_json_editor_holder')
-		        					,{
-		        						schema:settings_schema
-		        						,theme: 'jqueryui'
-		        						,iconlib: 'jqueryui'
-		        						,disable_collapse: true
-		        						,disable_edit_json: true
-		        						,disable_properties: true
-		        						,keep_oneof_values: false
-		        					}
-		        				) ;
-		        				if( settings != undefined)
-		        					editor.setValue(settings) ;
-
-		        				function cleanup(){editor.destroy();$('#settings_dlg_json_editor_holder').text('') ;}
-
-								$('#settings_dialog').dialog({
-									modal: true
-									, width: '90%'
-									, close : cleanup
-									, buttons: {
-										Apply: function(){
-											var path = node.id.split('.').join('/') ;
-
-											picogw.callproc({
-												method:'POST'
-												,path:API_PREFIX+path+'settings'
-												,args:{encrypted:cryptico.encrypt( JSON.stringify(editor.getValue()), RSA_PUB_KEY ).cipher}
-											}).then(function(json){
-												console.log(json) ;
-												if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
-											}).catch(e=>{
-												alert('API call failed:'+path) ; 
-												console.error(e) ;
-											});
-
-											cleanup() ;
-											$( this ).dialog( "close" );
-										}
-										,Cancel: function(){ cleanup() ; $( this ).dialog( "close" ); }
-									}
-								}) ;
-		        			}) ;
-	        			}} ;
-	        		}
-
-		        	/*menu.Document = {label:'Document', action:obj=>{
-							if( node_properties[node.id].longdoc != undefined )
-								alert(node_properties[node.id].longdoc) ;
-							else
-								alert('No document available.') ;
-						}} ;*/
-
-					menu.TestAPI = {label:'Test API',action:obj=>{
-						let node_prop = node_properties[node.id] ;
-						let path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
-						//window.open(API_PREFIX+path_real,'_blank') ;
-
-						let ht = '<pre>' ;
-						let access_queue = [] ;
-						function access(){
-							if( access_queue.length==0){
-								ht += '</pre><hr />API test completed.' ;
-								$('#api-testing-message').html(ht) ;
-								return ;
-							}
-							const acss = access_queue.shift() ;
-							//let ac_url = API_PREFIX+path_real+
-							ht += `${acss.method} ${acss.path}${acss.args==undefined?'':' '+JSON.stringify(acss.args)} :` ;
-							$('#api-testing-message').html(ht+'</pre>') ;
-							let starttime = (new Date()).getTime() ;
-							$.ajax({type:acss.method,url:acss.path,data:acss.args,dataType:'json',
-								success:json=>{
-									ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
-									ht += JSON.stringify(json)+'\n' ;
-									$('#api-testing-message').html(ht+'</pre>') ;
-									if( acss.wait==null ) access() ;
-									else setTimeout(access,acss.wait) ;
-								}
-								,error:e=>{
-									ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
-									ht += JSON.stringify(e,null,'\t') ;
-									$('#api-testing-message').html(ht+'</pre>') ;
-									if( acss.wait==null ) access() ;
-									else setTimeout(access,acss.wait) ;
-									//access() ;
-								}
-							}) ;
-						}
-
-						$( '#api-test-dialog' ).dialog({
-							modal: true
-							,buttons: {
-								Ok: function() {
-									$('#api-testing-message').html('') ;
-									access_queue = [] ;
-									$( this ).dialog( "close" );
-								}
-							}
-							///,width:'80%',height:'80%'
-						});
-
-						if( node_prop.isleaf ){
-							access_queue.push({method:'GET',path:API_PREFIX+path_real});
-							access() ;
-						} else {
-							picogw.callproc({
-								method:'GET'
-								,path:API_PREFIX+path_real
-								,args:{option:'true'}
-							}).then(function(json){
-								for( let k in json ){
-									let path = API_PREFIX+path_real+k ;
-									access_queue.push({method:'GET',path:path});
-									if( json[k].option == null ) continue ;
-									let test = json[k].option.test ;
-									if( test instanceof Array ){
-										test.forEach(te=>{
-											te.path = path ;
-											access_queue.push(te) ;
-										}) ;
-									}
-								}
-								access() ;
-							}).catch(e=>{
-								alert('API call failed:'+API_PREFIX+path_real) ;
-								$( '#api-test-dialog' ).dialog('close');
-							}) ;
-						}
-
-
-
-						/*
-						picogw.callproc({
-							method:'GET'
-							,path:API_PREFIX+path_real
-							,args:{option:'true'}
-						}).then(function(json){
-							let ht = '<pre>' ;
-							let access_queue = [] ;
-							for( let k in json ){
-								let path = API_PREFIX+path_real+k ;
-								access_queue.push({method:'GET',path:path});
-								let test = json[k].option.test ;
-								if( test instanceof Array ){
-									test.forEach(te=>{
-										te.path = path ;
-										access_queue.push(te) ;
-									}) ;
-								}
-							}
-							function access(){
-								if( access_queue.length==0){
-									ht += '</pre><hr />API test completed.' ;
-									$('#api-testing-message').html(ht) ;
-									return ;
-								}
-								const acss = access_queue.shift() ;
-								//let ac_url = API_PREFIX+path_real+
-								ht += `${acss.method} ${acss.path}${acss.args==undefined?'':' '+JSON.stringify(acss.args)} :` ;
-								$('#api-testing-message').html(ht+'</pre>') ;
-								let starttime = (new Date()).getTime() ;
-								$.ajax({type:acss.method,url:acss.path,data:acss.args,dataType:'json',
-									success:json=>{
-										ht += ' success ('+( (new Date()).getTime() - starttime )+'ms) :' ;
-										ht += JSON.stringify(json)+'\n' ;
-										$('#api-testing-message').html(ht+'</pre>') ;
-										if( acss.wait==null ) access() ;
-										else setTimeout(access,acss.wait) ;
-									}
-									,error:e=>{
-										ht += ' failed ('+( (new Date()).getTime() - starttime )+'ms) :\n' ;
-										ht += JSON.stringify(e,null,'\t') ;
-										$('#api-testing-message').html(ht+'</pre>') ;
-										if( acss.wait==null ) access() ;
-										else setTimeout(access,acss.wait) ;
-										//access() ;
-									}
-								}) ;
-							}
-							access() ;
-							$( '#api-test-dialog' ).dialog({
-								modal: true
-								,buttons: {
-									Ok: function() {
-										$('#api-testing-message').html('') ;
-										access_queue = [] ;
-										$( this ).dialog( "close" );
-									}
-								}
-								///,width:'80%',height:'80%'
-							});
-						}).catch(e=>{
-							alert('API call failed:'+API_PREFIX+path_real) ;
-						}) ;
-						*/
-
-					}} ;
-
-					menu.OpenAPI = {label:'Open API in other tab',action:obj=>{
-						var path_real = node.id.replace(new RegExp('\\.','g'),'/') ;
-						window.open(API_PREFIX+path_real,'_blank') ;
-					}} ;
-
-	        		return menu ;
-				}
-				,select_node: false
-	        }
-			,types: {
-				folder: {icon: 'jstree-folder'}
-				,file: {icon: 'jstree-file'}
-			}
-	    }) ;
-	}) ;
-
-
-	// Create tabs
-	$( "#tabs" ).tabs();	// Stylize by jquery ui
-
-	// Load README document from GitHub
-	$.ajax({
-		type: 'GET'
-		,url: 'https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/README.md'
-		,success: content=>{
-			const START_POINT = content.indexOf('## Remarks') ;
-			const LICENSE_POINT = content.indexOf('## Licenses') ;
-			var apihowto = content.slice( START_POINT , LICENSE_POINT) ;
-			var license = content.slice( LICENSE_POINT ) ;
-			apihowto=apihowto.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
-			license=license.split('![](res/').join('![](https://raw.githubusercontent.com/KAIT-HEMS/PicoGW/master/res/') ;
-
-			license += ADDITIONAL_LICENSES_LINK ;
-
-			$('#api_howto').html(marked(apihowto)) ;
-			$('#license_text').html(marked(license)) ;
-			//console.log(readme) ;
-			//if( json.error == undefined ) alert('New settings saved.'); else alert(json.error);
-		}
-		,error: err=>{ alert('README file cannot be loaded.') ; }
-	});
-
-} ;
-
 
 </script>
 <script>
