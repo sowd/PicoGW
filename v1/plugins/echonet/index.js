@@ -81,7 +81,17 @@ function getMacFromDeviceId(device_id){
 	return undefined ;
 }
 
+function assert(bAssertion,msg){
+	if( bAssertion === true ) return ;
+	if( typeof msg == 'string' )
+		log('Assertion failed:'+msg);
+	else
+		log('Assertion failed');
+}
+
 let ELDB = {} ;
+
+const IP_UNDEFINED = '-' ;
 
 exports.init = function(pi /*,globals*/){
 	pluginInterface = pi ;
@@ -98,15 +108,39 @@ exports.init = function(pi /*,globals*/){
 			macs[mac].devices[devid].active = false ;
 	}
 
+	function setIPAddressAsUnknown(ip){
+		if( ip == IP_UNDEFINED ) return ;
+		for( const mac in macs ){
+			if( macs[mac].ip !== ip) continue ;
+			macs[mac].ip = IP_UNDEFINED;
+			// macs[mac].active = false;
+		}
+	}
+
 	pluginInterface.setNetCallbacks({
 		 onMacFoundCallback : function(net,newmac,newip){
-			//log(`onMacFoundCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
+			log(`onMacFoundCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
+			assert( net == mynet , 'onMacFoundCallback' );
+
+			setIPAddressAsUnknown(newip);
+			// Really new MAC (if it is an ECHONET device, it will be discovered later.)
+			if( macs[newmac] == null ) return ;
+			macs[newmac].active = true ;
+			macs[newmac].ip = newip ;
 		 }
 		,onMacLostCallback : function(net,lostmac,lostip){
-			//log(`onMacLostCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
+			log(`onMacLostCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
+			assert( net == mynet , 'onMacLostCallback' );
+			setIPAddressAsUnknown(lostip);
+			if( macs[lostmac] != null )
+				macs[lostmac].active = false ;
 		}
 		,onIPChangedCallback : function(net,mac,oldip,newip){
-			//log(`onIPChangedCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}","${arguments[3]}")`);
+			log(`onIPChangedCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}","${arguments[3]}")`);
+			assert( net == mynet , 'onIPChangedCallback' );
+			setIPAddressAsUnknown(newip);
+			assert( macs[mac].ip == oldip , 'onIPChangedCallback : old ip '+oldip+'does not exist' );
+			macs[mac].ip = newip ;
 		 	EL.sendOPC1( EL.EL_Multi, [0x0e,0xf0,0x01], [0x0e,0xf0,0x01], 0x73, 0xd5, EL.Node_details["d5"] );
 		}
 	}) ;
@@ -187,6 +221,7 @@ exports.init = function(pi /*,globals*/){
 					macs[mac] = {ip:ip,active:true,nodeprofile:{},devices:{},eoj_id_map:{}} ;
 				} else {
 					macs[mac].active = true ;
+					setIPAddressAsUnknown(macs[mac].ip) ;
 					macs[mac].ip = ip ; // ip may be changed
 				}
 
@@ -325,7 +360,7 @@ exports.init = function(pi /*,globals*/){
 			}
 		}).catch( ()=>{
 			// Do nothing
-			log('No id is found for ip '+ip);
+			log('No MAC is found for ip '+ip);
 		}) ;
 	};
 
@@ -379,10 +414,15 @@ function getPropVal(devid,epc_hex){
 		if( tid > 0xFFFF ) tid = 1 ;
 		localStorage.setItem('TransactionID',tid) ;
 
-		var mac = getMacFromDeviceId(devid) ;
-		var ip = macs[mac].ip ;
-		var deoj = macs[mac].devices[devid].eoj ;
+		const mac = getMacFromDeviceId(devid) ;
+		const ip = macs[mac].ip ;
+		const deoj = macs[mac].devices[devid].eoj ;
 		deoj = [deoj.slice(0,2),deoj.slice(2,4),deoj.slice(-2)].map(e=>parseInt('0x'+e)) ;
+
+		if( ip === IP_UNDEFINED || macs[mac].active !== true){
+			rj({error: `${devid} is not active now.` });
+			return ;
+		}
 
 		buffer = new Buffer([
 			0x10, 0x81,
@@ -414,10 +454,15 @@ function setPropVal(devid,epc_hex,edt_array){
 		if( tid > 0xFFFF ) tid = 1 ;
 		localStorage.setItem('TransactionID',tid) ;
 
-		var mac = getMacFromDeviceId(devid) ;
-		var ip = macs[mac].ip ;
-		var deoj = macs[mac].devices[devid].eoj ;
+		const mac = getMacFromDeviceId(devid) ;
+		const ip = macs[mac].ip ;
+		const deoj = macs[mac].devices[devid].eoj ;
 		deoj = [deoj.slice(0,2),deoj.slice(2,4),deoj.slice(-2)].map(e=>parseInt('0x'+e)) ;
+
+		if( ip === IP_UNDEFINED || macs[mac].active !== true){
+			rj({error: `${devid} is not active now.` });
+			return ;
+		}
 
 		buffer = new Buffer([
 			0x10, 0x81,
