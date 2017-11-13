@@ -1,277 +1,234 @@
-// There are two ways to find hosts.
-// One is looking into arp table and the other is using protocol-specific discovery (usually by UDP-multicasting)
-// Since we use mac address as id of hosts, we eventually need to look into arp table.
-// Therefore, we allow each plugin to report newly-found ip address using the protocol,
-// which are then pinged to determine the mac address, and sent back to the plugin.
+const CHECK_ARP_TABLE_AND_PING_INTERVAL = 60*1000 ;
+const PING_TIMEOUT_IN_SEC = 7 ;
 
-// Todo: what happens if myself is disconnected?
+const arped = require('arped');
+const ping = require('ping');
+const os = require('os');
 
-const CHECK_ARP_TABLE_INTERVAL = 60*1000 ;
-/*Ping for alive check*/
-const PING_INTERVAL = 10*1000 , PING_RANDOM_RANGE = 2*1000 , PING_TIMEOUT_IN_SEC = 7 ;
-const COMPLETE_IP_SCAN = false ;
+/////////////////////////////////////////////
+///   Exported methods
+/////////////////////////////////////////////
 
+// return: { mymac1:{net:net,ip:ip,self:(true|undefined)} , mymac2:{} ... }
+// It also outputs available nets.
+exports.getMACs = function(bSelfOnly){
+	if( bSelfOnly !== true ) return objCpy(macs);
+	let ret = {} ;
+	for( const mac in macs ){
+		if( macs[mac].self === true )
+			ret[mac] = macs[mac] ;
+	}
+	return objCpy(ret) ;
+}
+function objCpy(src){
+	return JSON.parse(JSON.stringify(src)) ;
+	//return Object.assign({},src);
+}
 
-
-const GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT = CHECK_ARP_TABLE_INTERVAL + PING_TIMEOUT_IN_SEC*1000 ;
-
-var arped = require('arped');
-var ping = require('ping');
-var os = require('os');
-
-// ID == mac address
-var onIPMacFoundCallback = {} ;
-exports.getNetIDFromIPv4Address = function(ip){
+// If the third param is true, corresponding mac is searched
+// by pinging to 
+exports.getMACFromIPv4Address = function(net,ip,bSearch){
 	return new Promise((ac,rj)=>{
-		chkArpTable() ;
-		for( const iface of mynetinfo ){
-			if( iface.address == ip ){
-				ac(iface.mac) ;
-				return ;
-			}
-		}
-		var candidate ;
-		// Prioritize active macs.
-		for( var mac in macs){
-			if( macs[mac].log[0].ip === ip ){
-				if( macs[mac].active ){
+		function checkInCache(){
+			for( const mac in macs ){
+				const macinfo = macs[mac] ;
+				if( macinfo.net == net && macinfo.ip == ip ){
 					ac(mac) ;
-					return ;
+					return true ;
 				}
-				candidate = mac ;
 			}
 		}
-		// return inactive mac
-		if( candidate != undefined ){
-			ac( candidate ) ;
+		if( checkInCache() === true ) return ; // Found. accepted.
+
+		// No corresponding ip in cache.
+		chkArpTable()
+		if( checkInCache() === true ) return ; // Found. accepted.
+
+		if( !bSearch ){
+			rj({error:'Not found in arp table.'});
 			return ;
 		}
-		// Not found.
-		if( onIPMacFoundCallback[ip] == undefined )
-			onIPMacFoundCallback[ip] = [] ;
-		// Wait until mac address is found.
-		onIPMacFoundCallback[ip].push( ac ) ;
-		ping.sys.probe(ip, function(isActive){}) ;	// take mac to arp table
 
-		// Timeout setting
-		setTimeout( ()=>{
-			if( onIPMacFoundCallback[ip] == undefined ) return ;	// already accepted.
-			var i = onIPMacFoundCallback[ip].indexOf(ac) ;
-			if( i!=-1 )	onIPMacFoundCallback[ip].splice(i,1) ;
-			rj() ;
-		},GET_MAC_FROM_IPv4_ADDRESS_TIMEOUT) ;
+		// Not listed in arp table. try ping to list the ip on arp table.
+		ping_net(net,ip).then(bActive=>{
+			chkArpTable();
+			if( checkInCache() === true ) return ; // Found. accepted.
+			rj({error:'Timeout'}) ;
+		}).catch(()=>{
+			rj({error:'Ping error'}) ;
+		});
 	}) ;
-} ;
+}
 
-var onNewIDFoundCallback			= function(newid,newip){} ;
-var onIPAddressLostCallback			= function(id,lostip){} ;
-var onIPAddressRecoveredCallback	= function(id,recoveredip){} ;
-var onIPAddressChangedCallback		= function(id,oldip,newip){} ;
 exports.setNetCallbackFunctions = function(
-		 _onNewIDFoundCallback
-		,_onIPAddressLostCallback
-		,_onIPAddressRecoveredCallback
-		,_onIPAddressChangedCallback ){
-		if( _onNewIDFoundCallback != undefined )
-			onNewIDFoundCallback			= _onNewIDFoundCallback ;
-		if( _onIPAddressLostCallback != undefined )
-			onIPAddressLostCallback			= _onIPAddressLostCallback ;
-		if( _onIPAddressRecoveredCallback != undefined )
-			onIPAddressRecoveredCallback	= _onIPAddressRecoveredCallback ;
-		if( _onIPAddressChangedCallback != undefined )
-			onIPAddressChangedCallback		= _onIPAddressChangedCallback ;
+	 _onMacFoundCallback , _onMacLostCallback , _onIPChangedCallback ){
+		onMacFoundCallback	= _onMacFoundCallback	|| function(net,newmac,newip){} ;
+		onMacLostCallback	= _onMacLostCallback	|| function(net,lostmac,lostip){} ;
+		onIPChangedCallback	= _onIPChangedCallback	|| function(net,mac,oldip,newip){} ;
 } ;
 
-//////////////////////////////////////////////
-//////////////////////////////////////////////
-//  Return my network interfaces
-function myAddresses(){
-	let ifaces = os.networkInterfaces() ;
-	let ret = [] ;
-	for( const i in ifaces ){
-		ret = ret.concat(ifaces[i].filter(e => {
-			return (e.family === 'IPv4' && e.internal === false);
-		})) ;
+/////////////////////////////////////////////
+////   Exports ended
+/////////////////////////////////////////////
+
+let macs = {} ;
+let onMacFoundCallback , onMacLostCallback , onIPChangedCallback ;
+
+
+// Initialize
+exports.setNetCallbackFunctions(
+	function(net,newmac,newip){
+		log(`onMacFoundCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
 	}
-	return ret ;
-}
-exports.refreshMyAddress = ()=>{
-	mynetinfo = myAddresses() ;	// updated on all ping timing
-	for( const iface of mynetinfo ){
-		if( macs[iface.mac].log[0].ip == iface.address )
-			macs[iface.mac].log[0].timestamp = Date.now() ;
-		else {
-			let oldip = macs[iface.mac].log[0].ip ;
-			macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;
-			onIPAddressChangedCallback( iface.mac , oldip , iface.address ) ;
-
-		}
+	,function(net,lostmac,lostip){
+		log(`onMacLostCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
 	}
-}
-
-var mynetinfo = myAddresses() ;	// updated on all ping timing
-console.log('Network info:'+JSON.stringify(mynetinfo)) ;
-
-
-//////////////////////////////////////////////
-//////////////////////////////////////////////
-//  Check arp table and update macs
-var macs = {} ;
-exports.getmacs = ()=>macs ;
-
-for( const iface of mynetinfo ){
-	macs[iface.mac] = {active:true, localhost:true, log: [ {ip:iface.address,timestamp:Date.now()} ]} ;
-}
-var d = 0 ;
-function deactivatemacbyip(ip){
-	var prev_actives = [] ;
-	for( let mac in macs ){
-		if( macs[mac].log[0].ip == ip ){
-			if( macs[mac].active )
-				prev_actives.push(mac) ;
-			macs[mac].active = false ;
-		}
+	,function(net,mac,oldip,newip){
+		log(`onIPChangedCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}","${arguments[3]}")`);
 	}
-	return prev_actives ;
+) ;
+
+
+/////////////////////////////////////////////
+///   Utility functions
+/////////////////////////////////////////////
+
+
+function log(msg){
+	if( typeof(msg)=='object')	console.log(JSON.stringify(msg,null,'\t')) ;
+	else						console.log(msg) ;
 }
 
+function ping_net(net,ip){
+	return new Promise((ac,rj)=>{
+		try {
+			let params = {timeout:PING_TIMEOUT_IN_SEC} ;
+			switch(process.platform){
+			case 'win32' :
+			case 'win64' : // Never hits
+				break ;
+			case 'darwin' :
+			case 'freebsd' :
+				params.extra = ['-S',net] ;
+				break ;
+			default :
+				params.extra = ['-I',net] ;
+				break ;
+			}
 
-var arptxt = '' ;
+			ping.sys.probe(ip, ac, params ) ;
+		} catch(e){rj(e)} ;
+	}) ;
+}
+
+function isNetworkSame(maskstr,ip1str,ip2str){
+	function convToNum(ipstr){
+		let ret=0 , mul = 256*256*256 ;
+		ipstr.split('.').forEach(numstr=>{ret += parseInt(numstr)*mul;mul>>=8;} );
+		return ret ;
+	}
+	let mask = convToNum(maskstr) ;
+	let ip1 = convToNum(ip1str) ;
+	let ip2 = convToNum(ip2str) ;
+	return (ip1&mask) == (ip2&mask) ;
+}
+
 function chkArpTable(){
-	// console.log('Checking arp table..') ;
+	let oldmacs = macs ;
+
 	try {
-	 	var newtxt = arped.table().trim() ;
+		macs = {} ;
 
-		if( arptxt == newtxt){
-			// Register all known ips again for ping.
-			for( mac in macs )
-				ping_ips[macs[mac].log[0].ip] = mac ;
-			//console.log('Not updated.') ;
-			return ;
-		}
-
-		// arp table is changed (only flags can change, which is not reflected to parsed object)
-		//console.log('Old table:'+arptxt) ;
-		//console.log('New table:'+newtxt) ;
-
-		arptxt = newtxt ;
-		var newobj = arped.parse(arptxt) ;
-		//console.log('New table object:'+JSON.stringify(newobj,null,"\t")) ;
+		// Check arp text
+		//log('Checking arp table..') ;
+		let newobj = arped.parse(arped.table()) ;
+		//log('ARP table object:') ; log(newobj,null,"\t") ;
 
 		// Register new mac address and corresponding IP
-		var net,mac,peer ;
-		for( net in newobj.Devices ) for( mac in newobj.Devices[net].MACs ){
-			if( mac === '00:00:00:00:00:00' ) continue ;
-			// console.log('Mac:'+mac) ;
-			var newip = newobj.Devices[net].MACs[mac].trim() ;
-			prev_actives = deactivatemacbyip(newip) ;
-			if( macs[mac] == undefined ){
-				// New mac address found (active=true because newly-found host is probably active)
-				macs[mac] = { active:true , log: [ {ip:newip,timestamp:Date.now()} ] };
-				console.log( mac+'/'+newip+' newly found.' ) ;
-				onNewIDFoundCallback( mac , newip ) ;
-			} else {
-				// Existing mac address re-found
-				peer = macs[mac] ;
-				peer.active = true ;
-				var curip = peer.log[0].ip ;
-				if( curip != newip ){
-					// IP address changed
-					peer.log.unshift({ip:newip,timestamp:Date.now()}) ;
-					console.log( mac+' changed IP address from '+curip+' to '+newip ) ;
-					onIPAddressChangedCallback( mac , curip , newip ) ;
-				} else if( prev_actives.indexOf(mac) == -1 ){ // Re-found
-					console.log(mac+'/'+curip+' re-appeared') ;
-					onIPAddressRecoveredCallback( mac , curip ) ;
-				} else { //  already active.
-					prev_actives.splice(prev_actives.indexOf(mac),1) ;
+		let nets = {} ;	// Used only for windows env.
+		for( const net in newobj.Devices ){
+			for( const mac in newobj.Devices[net].MACs ){
+				if( mac === '00:00:00:00:00:00' || mac === 'ff:ff:ff:ff:ff:ff' ) continue ;
+				macs[mac] = { net:net , ip:newobj.Devices[net].MACs[mac] } ;
+				if( nets[net] == null )	// Believe the first device is truly in this net. (Inprecise. Windows only)
+					nets[net] = macs[mac].ip ;
+			}
+		}
+
+		// Trace self info
+		//log('Checking self MACs/IPs..') ;
+		let ifaces = os.networkInterfaces() ;
+		//log('networkInterfaces object:') ; log(ifaces) ;
+		for( const _mynet in ifaces ){
+			ifaces[_mynet].forEach(iinfo=>{
+				if( iinfo.family !== 'IPv4' || iinfo.internal === true ) return ;
+				macs[iinfo.mac] = {net:_mynet,ip:iinfo.address,self:true} ;
+
+				let mynet = _mynet ;
+
+				if( process.platform.indexOf('win') == 0 && nets[mynet] == null ){
+					// New network? Net name different? (No way to tell because network name
+					// in arp and os.networkInterface can be different.)
+					for( const net in nets ){
+						// Seems to be in the same net... network name is copied from
+						// arp one.
+						if( isNetworkSame(iinfo.netmask,iinfo.address,nets[net])){
+							macs[iinfo.mac].net = net ;
+							mynet = net ;
+							break ;
+						}
+					}
 				}
-			}
 
-			prev_actives.forEach(deactivated_mac=>{
-				onIPAddressLostCallback( deactivated_mac , curip ) ;
-				console.log(deactivated_mac+'/'+curip+' disappeared') ;
+				// Check devices are really in this network. (only happens in windows)
+				for( const mac in macs ){
+					if( macs[mac].net != mynet ) continue ;
+					if( !isNetworkSame(iinfo.netmask,iinfo.address,macs[mac].ip) ){
+						delete macs[mac] ;
+					}
+				}
 			}) ;
+		}
 
-			if( onIPMacFoundCallback[newip] != undefined ){
-				onIPMacFoundCallback[newip].forEach(cb=>cb(mac)) ;
-				delete onIPMacFoundCallback[newip] ;
+		// Differenciate and call external callbacks for network change.
+		// Compare new arp => old arp
+		for( const mac in macs ){
+			if( oldmacs[mac] == null ){
+				// New mac appeared
+				onMacFoundCallback(macs[mac].net , mac , macs[mac].ip ) ;
+			} else if( oldmacs[mac].net !== macs[mac].net ){
+				// Network changed
+				onMacLostCallback( oldmacs[mac].net , mac , oldmacs[mac].ip ) ;
+				onMacFoundCallback(macs[mac].net , mac , macs[mac].ip ) ;
+				delete oldmacs[mac] ;
+			} else if( oldmacs[mac].ip !== macs[mac].ip ){
+				// IP address changed
+				onIPChangedCallback(macs[mac].net , mac , oldmacs[mac].ip , macs[mac].ip ) ;
+				delete oldmacs[mac] ;
+			} else {
+				// mac,net,ip are the same.
+				delete oldmacs[mac] ;
 			}
 		}
 
-		// Register all known ips for ping.
-		for( mac in macs )
-			ping_ips[macs[mac].log[0].ip] = mac ;
+		// Compare old arp => new arp (remains losts.)
+		for( const mac in oldmacs ){
+			onMacLostCallback( oldmacs[mac].net , mac , oldmacs[mac].ip ) ;
+		}
+
+		//log('New macs:'); log(macs);
 	} catch(e){
-		console.error('Error in reading arp table:') ;
-		console.error(e) ;
+		macs = oldmacs ;
 	}
-	//console.log('Updated.') ;
-} ;
-
-
-//////////////////////////////////////////////
-//////////////////////////////////////////////
-//  Ping all known IPs
-var ping_ips = {} ;
-function ping_all(){
-	//console.log('ping_all start:'+JSON.stringify(ping_ips)) ;
-	var ping_ips_copy = ping_ips ;
-	ping_ips = {} ;
-
-	if( COMPLETE_IP_SCAN ){
-		// add unknown ip address to ping list
-		//mynetinfo = myAddresses() ;
-		exports.refreshMyAddress() ;
-		for( const iface of mynetinfo ){
-			/*if( macs[iface.mac].log[0].ip == iface.address )
-				macs[iface.mac].log[0].timestamp = Date.now() ;
-			else
-				macs[iface.mac].log.unshift( {ip:iface.address,timestamp:Date.now()} ) ;*/
-
-			var mask = 0 , subnet = 0 ;
-			iface.netmask.split('.').forEach( b => {
-				mask = mask*256 + parseInt(b) ;
-			} ) ;
-			iface.address.split('.').forEach( b => {
-				subnet = subnet*256 + parseInt(b) ;
-			} ) ;
-			subnet = subnet & mask ;
-
-			while(mask!=0x100000000) {
-				var ip = ((subnet >>24) & 0xFF)
-					+ '.'+((subnet >> 16) & 0xFF)
-					+ '.'+((subnet >> 8) & 0xFF)
-					+ '.'+ (subnet & 0xFF) ;
-				++subnet ;
-				++mask ;
-
-				if( ping_ips_copy[ip] == undefined && ip != iface.address )
-					ping_ips_copy[ip] = null ;
-			}
-		}
-	}
-
-	for( let ip in ping_ips_copy ){
-		setTimeout(()=>{
-			//console.log('Pinging to '+ip+'...') ;
-			try {
-				ping.sys.probe(ip, function(isActive){}, {timeout:PING_TIMEOUT_IN_SEC} ) ;
-			} catch(e){
-				console.log('Failed to ping, ignoring error. ' + ip);
-				console.log(e);
-			}
-		}, parseInt(PING_RANDOM_RANGE * Math.random())) ;
-	}
-
-	setTimeout(ping_all,PING_INTERVAL) ;
 }
 
-setInterval(
-	()=>{
-		exports.refreshMyAddress();
-		chkArpTable();
+setInterval(()=>{
+	chkArpTable() ;
+	for( const mac in macs ){
+		ping_net(macs[mac].net,macs[mac].ip);
 	}
-	,CHECK_ARP_TABLE_INTERVAL
-) ;
-ping_all() ;
+
+},CHECK_ARP_TABLE_AND_PING_INTERVAL) ;
+
+// Initial check
+chkArpTable() ;

@@ -25,6 +25,7 @@ var log = console.log ;
 var localStorage ;
 
 var macs = {} ;
+var mynet ;
 function savemac(){ localStorage.setItem('macs',macs) ; }
 
 /* macs entry format:
@@ -80,36 +81,44 @@ function getMacFromDeviceId(device_id){
 	return undefined ;
 }
 
-var ELDB = {} ;
+let ELDB = {} ;
 
 exports.init = function(pi /*,globals*/){
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
+
 	localStorage = pluginInterface.localStorage ;
 	macs = localStorage.getItem('macs',{}) ;
 	//MAKER_CODE = localStorage.getItem('makercode',MAKER_CODE) ;
 
 	// Reset states
-	for( var mac in macs ){
+	for( const mac in macs ){
 		macs[mac].active = false ;
-		for( var devid in macs[mac].devices )
+		for( const devid in macs[mac].devices )
 			macs[mac].devices[devid].active = false ;
 	}
-	pluginInterface.setNetIDCallbacks({
-		 onNewIDFoundCallback : function(newid,newip){
-		 	//log('onNewIDFoundCallback:'+JSON.stringify(arguments)) ;
+
+	pluginInterface.setNetCallbacks({
+		 onMacFoundCallback : function(net,newmac,newip){
+			//log(`onMacFoundCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
 		 }
-		,onIPAddressLostCallback : function(id,lostip){
-		 	//log('onIPAddressLostCallback:'+JSON.stringify(arguments)) ;
+		,onMacLostCallback : function(net,lostmac,lostip){
+			//log(`onMacLostCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}")`);
 		}
-		,onIPAddressRecoveredCallback : function(id,recoveredip){
-		 	//log('onIPAddressRecoveredCallback:'+JSON.stringify(arguments)) ;
-		}
-		,onIPAddressChangedCallback : function(id,oldip,newip){
-		 	//log('onIPAddressChangedCallback:'+JSON.stringify(arguments)) ;
+		,onIPChangedCallback : function(net,mac,oldip,newip){
+			//log(`onIPChangedCallback("${arguments[0]}","${arguments[1]}","${arguments[2]}","${arguments[3]}")`);
 		 	EL.sendOPC1( EL.EL_Multi, [0x0e,0xf0,0x01], [0x0e,0xf0,0x01], 0x73, 0xd5, EL.Node_details["d5"] );
 		}
 	}) ;
+
+	// Set mynet: Take the first one.
+	//   This should be specified through GUI in the future.
+	const myMACs = pluginInterface.getMACs(true) ;
+	for( const mynet_caididate in myMACs ){
+		mynet = myMACs[mynet_caididate].net ;
+		break ;
+	}
+
 
 	// Initialize echonet lite
 	const MY_PROPS = JSON.parse( fs.readFileSync(pluginInterface.getpath()+'controller_properties.json','utf-8')) ;
@@ -165,7 +174,8 @@ exports.init = function(pi /*,globals*/){
 	// ネットワーク内のEL機器全体情報を更新する，受信したら勝手に実行される
 	EL.renewFacilities = function( ip, els ) {
 		//console.dir(els) ;
-		pluginInterface.getNetIDFromIPv4Address(ip).then(mac=>{
+		//log(`getMACFromIPv4Address(${mynet},${ip})`);
+		pluginInterface.getMACFromIPv4Address(mynet,ip,true).then(mac=>{
 			try {
 				const seoj = els.SEOJ.substring(0,4) ;
 				var epcList = EL.parseDetail( els.OPC, els.DETAIL );

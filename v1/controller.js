@@ -39,7 +39,8 @@ exports.init = function(_globals /*,clientFactory*/){
 						{VERSION:VERSION,admin:admin,PubSub:globals.PubSub}
 						,plugin_name) ;
 					var exportmethods = {} ;
-					[ 'publish','log','on','off','getNetIDFromIPv4Address','setNetIDCallbacks'
+					[ 'publish','log','on','off'
+						,'getMACFromIPv4Address','setNetCallbacks','getMACs'
 						,'getSettingsSchema','getSettings'
 						,'setOnGetSettingsSchemaCallback','setOnGetSettingsCallback','setOnSettingsUpdatedCallback'
 						,'getpath','getprefix']

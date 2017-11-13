@@ -45,19 +45,24 @@ exports.PluginInterface = class {
 	}
 
 	// Returns promise
-	getNetIDFromIPv4Address (ipv4addr) {
+	getMACFromIPv4Address (net,ip,bSearch) {
 		if( this.prefix == 'admin')
-			return Promise.reject('Cannot call getNetIDFromIPv4Address from admin plugin') ;
-		return globals.admin.getNetIDFromIPv4Address_Forward(ipv4addr) ;
+			return Promise.reject('Cannot call getMacFromIPv4Address from admin plugin') ;
+		return globals.admin.getMACFromIPv4Address_Forward(net,ip,bSearch) ;
 	}
 
 	// callbacks_obj can contain the following four members
-	// onNewIDFoundCallback			: function(newid,newip) ;
-	// onIPAddressLostCallback		: function(id,lostip) ;
-	// onIPAddressRecoveredCallback	: function(id,recoveredip) ;
-	// onIPAddressChangedCallback	: function(id,oldip,newip) ;
-	setNetIDCallbacks (callbacks_obj) {
-		globals.admin.setNetIDCallbacks_Forward(this.prefix , callbacks_obj) ;
+	// onMacFoundCallback	: function(net,newmac,newip) ;
+	// onMacLostCallback	: function(net,lostmac,lostip) ;
+	// onIPChangedCallback	: function(net,mac,oldip,newip) ;
+	setNetCallbacks (callbacks_obj) {
+		globals.admin.setNetCallbacks_Forward(this.prefix , callbacks_obj) ;
+	}
+
+	// If the argument is true, returns only self macs.
+	// Otherwise, returns all macs recognized
+	getMACs (bSelfOnly) {
+		return globals.admin.getMACs(bSelfOnly) ;
 	}
 
 

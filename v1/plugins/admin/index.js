@@ -22,27 +22,26 @@ exports.init = function(pi){
 	pluginInterface = pi ;
 	log = pluginInterface.log ;
 	localStorage = pluginInterface.localStorage ;
-
 	ipv4.setNetCallbackFunctions(
-		function(newid,newip){
-			for( let plugin_name in netIDCallbacks )
-				if( netIDCallbacks[plugin_name].onNewIDFoundCallback != undefined )
-					netIDCallbacks[plugin_name].onNewIDFoundCallback(newid,newip) ;
+		function(net,newmac,newip){
+			for( let plugin_name in NetCallbacks )
+				if( NetCallbacks[plugin_name].onMacFoundCallback != undefined )
+					NetCallbacks[plugin_name].onMacFoundCallback(net,newmac,newip) ;
+					//NetCallbacks[plugin_name].onNewIDFoundCallback(newid,newip) ;
+
 		}
-		,function(id,lostip){
-			for( let plugin_name in netIDCallbacks )
-				if( netIDCallbacks[plugin_name].onIPAddressLostCallback != undefined )
-					netIDCallbacks[plugin_name].onIPAddressLostCallback(id,lostip) ;
+		,function(net,lostmac,lostip){
+			for( let plugin_name in NetCallbacks )
+				if( NetCallbacks[plugin_name].onMacLostCallback != undefined )
+					NetCallbacks[plugin_name].onMacLostCallback(net,lostmac,lostip) ;
+					//NetCallbacks[plugin_name].onIPAddressLostCallback(id,lostip) ;
+
 		}
-		,function(id,recoveredip){
-			for( let plugin_name in netIDCallbacks )
-				if( netIDCallbacks[plugin_name].onIPAddressRecoveredCallback != undefined )
-					netIDCallbacks[plugin_name].onIPAddressRecoveredCallback(id,recoveredip) ;
-		}
-		,function(id,oldip,newip){
-			for( let plugin_name in netIDCallbacks )
-				if( netIDCallbacks[plugin_name].onIPAddressChangedCallback != undefined )
-					netIDCallbacks[plugin_name].onIPAddressChangedCallback(id,oldip,newip) ;
+		,function(net,mac,oldip,newip){
+			for( let plugin_name in NetCallbacks )
+				if( NetCallbacks[plugin_name].onIPChangedCallback != undefined )
+					NetCallbacks[plugin_name].onIPChangedCallback(net,mac,oldip,newip) ;
+					//NetCallbacks[plugin_name].onIPAddressChangedCallback(id,oldip,newip) ;
 		}
 	) ;
 
@@ -252,7 +251,7 @@ exports.init = function(pi){
 				const ignore_error_cmds = ['delete','down' /*,'up'*/] ;
 				function ex(){
 					if( commands.length==0 ){
-						ipv4.refreshMyAddress() ;
+						// ipv4.refreshMyAddress() ;
 						ac() ;
 						return ;
 					}
@@ -271,7 +270,7 @@ exports.init = function(pi){
 					}) ;
 					child.stdout.on('close',()=>{
 						if( commands.length == 0 ){
-							ipv4.refreshMyAddress() ;
+							//ipv4.refreshMyAddress() ;
 							ac() ;
 							return ;
 						} else ex() ;
@@ -289,19 +288,23 @@ exports.init = function(pi){
 } ;
 
 // Returns promise
-exports.getNetIDFromIPv4Address_Forward = function(ipv4addr) {
-	return ipv4.getNetIDFromIPv4Address(ipv4addr) ;
+exports.getMACFromIPv4Address_Forward = function(net,ip,bSearch) {
+	return ipv4.getMACFromIPv4Address(net,ip,bSearch) ;
 }
 
 // callbacks_obj can contain the following four members
-// onNewIDFoundCallback			: function(newid,newip) ;
-// onIPAddressLostCallback		: function(id,lostip) ;
-// onIPAddressRecoveredCallback	: function(id,recoveredip) ;
-// onIPAddressChangedCallback	: function(id,oldip,newip) ;
-var netIDCallbacks = {} ;
-exports.setNetIDCallbacks_Forward = function(plugin_name , callbacks_obj) {
-	netIDCallbacks[plugin_name] = callbacks_obj ;
+// onMacFoundCallback	: function(net,newmac,newip) ;
+// onMacLostCallback	: function(net,lostmac,lostip) ;
+// onIPChangedCallback	: function(net,mac,oldip,newip) ;
+var NetCallbacks = {} ;
+exports.setNetCallbacks_Forward = function(plugin_name , callbacks_obj) {
+	NetCallbacks[plugin_name] = callbacks_obj ;
 } ;
+
+exports.getMACs = function(bSelfOnly) {
+	return ipv4.getMACs(bSelfOnly) ;
+}
+
 
 function onProcCall( method , path /*devid , propname*/ , args ){
 	switch(method){
@@ -319,15 +322,14 @@ function onProcCall( method , path /*devid , propname*/ , args ){
 }
 
 function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
+	//console.log('onProcCall_Get('+JSON.stringify(arguments));
 	let path_split = path.split('/') ;
 	const serviceid = path_split.shift() ;
 	const propname = path_split.join('/') ;
 
 	if( serviceid == '' ){	// access 'admin/' => service list
-		var re = { net:{} , server_status:{}} ;
-		var macs = ipv4.getmacs() ;
-		for( var mac in macs )
-			re.net[mac] = macs[mac].active ;
+		let re = { net:{} , server_status:{}} ;
+		re.net = ipv4.getMACs() ;
 
 		if( args.option === 'true' ){
 			re.net.option={leaf:false,doc:{short:'Mac address of recognized network peers'}} ;
@@ -338,23 +340,17 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 	}
 
 	if( propname == '' ){	// access 'admin/serviceid/' => property list
-		var ret ;
+		let ret ;
 		switch(serviceid){
 			case 'net' :
-				var macs = ipv4.getmacs() ;
+				const macs = ipv4.getMACs() ;
 				//log(JSON.stringify(macs)) ;
-				ret = {} ;
-				for( var mac in macs ){
-					var ipaddr = (macs[mac].log.length==0?null:macs[mac].log[0].ip) ;
-					ret[mac] = {
-						active:macs[mac].active
-						,ip:ipaddr
-						,localhost:(macs[mac].localhost==true)
-					} ;
+				ret = macs ;
+				for( const mac in macs ){
 					if( args.option === 'true' ){
 						ret[mac].option = {
 							leaf:true
-							,doc:{short:(ipaddr==null?'IP:null':ipaddr)}
+							,doc:{short:(macs[mac].ip || 'IP:null')}
 						}
 					}
 				}
@@ -378,7 +374,7 @@ function onProcCall_Get( method , path /*serviceid , propname*/ , args ){
 
 	switch(serviceid){
 		case 'net' :
-			var m = ipv4.getmacs()[propname] ;
+			var m = ipv4.getMACs()[propname] ;
 			if( m == undefined )
 				return {error:'No such mac address:'+propname} ;
 			return m ;

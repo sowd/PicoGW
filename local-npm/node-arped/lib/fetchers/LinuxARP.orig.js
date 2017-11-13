@@ -28,31 +28,33 @@ var _ARP2 = require('./ARP');
 
 var _ARP3 = _interopRequireDefault(_ARP2);
 
-var _child_process = require('child_process');
+var _fs = require('fs');
 
-var _child_process2 = _interopRequireDefault(_child_process);
+var _fs2 = _interopRequireDefault(_fs);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var WindowsARP = function (_ARP) {
-    (0, _inherits3.default)(WindowsARP, _ARP);
+var LinuxARP = function (_ARP) {
+    (0, _inherits3.default)(LinuxARP, _ARP);
 
-    function WindowsARP() {
-        (0, _classCallCheck3.default)(this, WindowsARP);
-        return (0, _possibleConstructorReturn3.default)(this, (WindowsARP.__proto__ || (0, _getPrototypeOf2.default)(WindowsARP)).call(this));
+    function LinuxARP() {
+        (0, _classCallCheck3.default)(this, LinuxARP);
+        return (0, _possibleConstructorReturn3.default)(this, (LinuxARP.__proto__ || (0, _getPrototypeOf2.default)(LinuxARP)).call(this));
     }
 
-    (0, _createClass3.default)(WindowsARP, [{
+    (0, _createClass3.default)(LinuxARP, [{
         key: 'fetch',
         value: function fetch() {
-            var result = _child_process2.default.spawnSync('arp', ['-a']);
-            if (result.error) {
-                throw error;
+            var arpPath = '/proc/net/arp';
+
+            if (!_fs2.default.existsSync(arpPath)) {
+                throw new Error('Expected ARP table at: ' + arpPath + ' but it did not exist.');
             }
-            return result.stdout.toString();
+
+            return _fs2.default.readFileSync(arpPath).toString();
         }
     }]);
-    return WindowsARP;
+    return LinuxARP;
 }(_ARP3.default);
 
-exports.default = WindowsARP;
+exports.default = LinuxARP;
