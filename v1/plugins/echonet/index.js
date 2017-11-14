@@ -416,11 +416,11 @@ function getPropVal(devid,epc_hex){
 
 		const mac = getMacFromDeviceId(devid) ;
 		const ip = macs[mac].ip ;
-		const deoj = macs[mac].devices[devid].eoj ;
+		let deoj = macs[mac].devices[devid].eoj ;
 		deoj = [deoj.slice(0,2),deoj.slice(2,4),deoj.slice(-2)].map(e=>parseInt('0x'+e)) ;
 
 		if( ip === IP_UNDEFINED || macs[mac].active !== true){
-			rj({error: `${devid} is not active now.` });
+			rj({error: `The IP address of ${devid} is currently unknown.` });
 			return ;
 		}
 
@@ -460,7 +460,7 @@ function setPropVal(devid,epc_hex,edt_array){
 		deoj = [deoj.slice(0,2),deoj.slice(2,4),deoj.slice(-2)].map(e=>parseInt('0x'+e)) ;
 
 		if( ip === IP_UNDEFINED || macs[mac].active !== true){
-			rj({error: `${devid} is not active now.` });
+			rj({error: `The IP address of ${devid} is currently unknown.` });
 			return ;
 		}
 
@@ -637,9 +637,9 @@ function onProcCall_Get( method , devid , propname , args ){
 	if( devid == '' ){	// access 'echonet/' => device list
 		var devices = {} ;
 
-		for( var mac in macs ){
-			for( var devid in macs[mac].devices ){
-				var dev = macs[mac].devices[devid] ;
+		for( let mac in macs ){
+			for( let devid in macs[mac].devices ){
+				let dev = macs[mac].devices[devid] ;
 				devices[devid]={
 					mac:mac
 					,ip:macs[mac].ip
@@ -661,12 +661,12 @@ function onProcCall_Get( method , devid , propname , args ){
 		return devices ;
 	}
 
+	const mac = getMacFromDeviceId(devid) ;
+	if( mac == undefined )	return {error:'No such device:'+devid} ;
+	const dev = macs[mac].devices[devid] ;
+	const eoj = dev.eoj.substring(0,4) ;
 	if( propname == '' ){	// access 'echonet/devid/' => property list
 		// Ideally, property map should be checked.
-		var mac = getMacFromDeviceId(devid) ;
-		if( mac == undefined )	return {error:'No such device:'+devid} ;
-		var dev = macs[mac].devices[devid] ;
-		var eoj = dev.eoj.substring(0,4) ;
 		var names ;
 		if( args.option === 'true'){
 			names = JSON.parse( fs.readFileSync(
@@ -766,11 +766,8 @@ function onProcCall_Get( method , devid , propname , args ){
 		return re ;
 	}
 
-	var mac = getMacFromDeviceId(devid) ;
-	if( mac == undefined )	return {error:'No such device:'+devid} ;
-
-	var epc_hex ;
-	var epcs = ELDB[macs[mac].devices[devid].eoj.slice(0,4)].epcs ;
+	const epcs = ELDB[eoj].epcs ;
+	let epc_hex ;
 	for( var epc in epcs ){
 		if( propname === epcs[epc].epcType ){
 			epc_hex = epc ;
@@ -784,7 +781,8 @@ function onProcCall_Get( method , devid , propname , args ){
 			epc_hex = ('0'+(parseInt(propname)&0xff).toString(16)).slice(-2) ;
 		else return {error:'Unknown property name:'+propname} ;
 	}
-	
+
+
 	return getPropVal(devid,epc_hex) ;
 }
 
