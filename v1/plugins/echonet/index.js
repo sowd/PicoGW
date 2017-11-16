@@ -456,7 +456,7 @@ function setPropVal(devid,epc_hex,edt_array){
 
 		const mac = getMacFromDeviceId(devid) ;
 		const ip = macs[mac].ip ;
-		const deoj = macs[mac].devices[devid].eoj ;
+		let deoj = macs[mac].devices[devid].eoj ;
 		deoj = [deoj.slice(0,2),deoj.slice(2,4),deoj.slice(-2)].map(e=>parseInt('0x'+e)) ;
 
 		if( ip === IP_UNDEFINED || macs[mac].active !== true){
