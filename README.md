@@ -1,4 +1,4 @@
-### This project has moved to [another repository](https://github.com/KAIT-HEMS/node-picogw). This repository will not be maintained anymore and will be deleted soon.
+## This project has moved to [another location](https://github.com/KAIT-HEMS/node-picogw). This repository will not be maintained anymore and will be deleted soon.
 
 ![PicoGW logo](clients/web/default/htdocs/res/Banner.png)
 
